@@ -8,16 +8,17 @@ interface LayoutProps {
   children: React.ReactNode;
   userRole: 'admin' | 'technician' | 'patient';
   userName: string;
+  onNavigate?: (page: string) => void;
 }
 
-const Layout = ({ children, userRole, userName }: LayoutProps) => {
+const Layout = ({ children, userRole, userName, onNavigate }: LayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar for desktop */}
       <div className="hidden lg:block">
-        <Sidebar userRole={userRole} />
+        <Sidebar userRole={userRole} onNavigate={onNavigate} />
       </div>
 
       {/* Mobile sidebar overlay */}
@@ -38,7 +39,11 @@ const Layout = ({ children, userRole, userName }: LayoutProps) => {
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="lg:hidden fixed left-0 top-0 h-full z-50"
             >
-              <Sidebar userRole={userRole} onClose={() => setSidebarOpen(false)} />
+              <Sidebar 
+                userRole={userRole} 
+                onClose={() => setSidebarOpen(false)} 
+                onNavigate={onNavigate}
+              />
             </motion.div>
           </>
         )}

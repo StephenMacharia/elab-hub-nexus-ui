@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { 
@@ -18,9 +17,10 @@ import {
 interface SidebarProps {
   userRole: 'admin' | 'technician' | 'patient';
   onClose?: () => void;
+  onNavigate?: (page: string) => void;
 }
 
-const Sidebar = ({ userRole, onClose }: SidebarProps) => {
+const Sidebar = ({ userRole, onClose, onNavigate }: SidebarProps) => {
   const adminMenuItems = [
     { icon: BarChart3, label: 'Dashboard', active: true },
     { icon: Users, label: 'Users', active: false },
@@ -64,6 +64,29 @@ const Sidebar = ({ userRole, onClose }: SidebarProps) => {
     patient: 'Patient',
   };
 
+  const handleNavigation = (label: string) => {
+    if (onNavigate) {
+      const pageMap: { [key: string]: string } = {
+        'Dashboard': 'dashboard',
+        'Appointments': 'appointments',
+        'Test Results': 'testResults',
+        'Test Queue': 'testResults',
+        'Results': 'testResults',
+        'Messages': 'chat',
+        'Chat': 'chat',
+        'Profile': 'profile',
+        'Logout': 'logout'
+      };
+      
+      const page = pageMap[label] || 'dashboard';
+      onNavigate(page);
+    }
+    
+    if (onClose) {
+      onClose();
+    }
+  };
+
   return (
     <motion.div
       initial={{ x: -300 }}
@@ -104,6 +127,7 @@ const Sidebar = ({ userRole, onClose }: SidebarProps) => {
               transition={{ delay: index * 0.1 }}
             >
               <button
+                onClick={() => handleNavigation(item.label)}
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
                   item.active
                     ? 'bg-blue-50 text-blue-700 border border-blue-200'
@@ -120,7 +144,10 @@ const Sidebar = ({ userRole, onClose }: SidebarProps) => {
 
       {/* Footer */}
       <div className="p-4 border-t">
-        <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+        <button 
+          onClick={() => handleNavigation('Logout')}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+        >
           <LogOut className="h-5 w-5" />
           <span className="font-medium">Logout</span>
         </button>
