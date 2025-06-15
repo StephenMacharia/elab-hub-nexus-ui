@@ -12,7 +12,7 @@ const AdminDashboard = () => {
       change: '+12%',
       trend: 'up' as const,
       icon: Users,
-      color: 'blue'
+      color: 'blue' as const
     },
     {
       title: 'Active Labs',
@@ -20,7 +20,7 @@ const AdminDashboard = () => {
       change: '+2',
       trend: 'up' as const,
       icon: TestTube,
-      color: 'green'
+      color: 'green' as const
     },
     {
       title: 'Today\'s Appointments',
@@ -28,7 +28,7 @@ const AdminDashboard = () => {
       change: '-5%',
       trend: 'down' as const,
       icon: Calendar,
-      color: 'orange'
+      color: 'orange' as const
     },
     {
       title: 'System Health',
@@ -36,7 +36,7 @@ const AdminDashboard = () => {
       change: '+0.2%',
       trend: 'up' as const,
       icon: TrendingUp,
-      color: 'purple'
+      color: 'purple' as const
     }
   ];
 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { TestTube, Clock, CheckCircle, AlertTriangle, User, MessageCircle } from 'lucide-react';
@@ -12,7 +11,7 @@ const TechnicianDashboard = () => {
       change: '+6',
       trend: 'up' as const,
       icon: TestTube,
-      color: 'blue'
+      color: 'blue' as const
     },
     {
       title: 'Completed Today',
@@ -20,7 +19,7 @@ const TechnicianDashboard = () => {
       change: '+15%',
       trend: 'up' as const,
       icon: CheckCircle,
-      color: 'green'
+      color: 'green' as const
     },
     {
       title: 'Urgent Tests',
@@ -28,7 +27,7 @@ const TechnicianDashboard = () => {
       change: '-2',
       trend: 'down' as const,
       icon: AlertTriangle,
-      color: 'red'
+      color: 'red' as const
     },
     {
       title: 'Average Time',
@@ -36,7 +35,7 @@ const TechnicianDashboard = () => {
       change: '-5min',
       trend: 'down' as const,
       icon: Clock,
-      color: 'purple'
+      color: 'purple' as const
     }
   ];
 

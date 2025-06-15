@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, FileText, MessageCircle, Clock, CheckCircle, AlertCircle } from 'lucide-react';
@@ -12,7 +11,7 @@ const PatientDashboard = () => {
       change: '+1',
       trend: 'up' as const,
       icon: Calendar,
-      color: 'blue'
+      color: 'blue' as const
     },
     {
       title: 'Test Results',
@@ -20,7 +19,7 @@ const PatientDashboard = () => {
       change: '+2',
       trend: 'up' as const,
       icon: FileText,
-      color: 'green'
+      color: 'green' as const
     },
     {
       title: 'Unread Messages',
@@ -28,7 +27,7 @@ const PatientDashboard = () => {
       change: '+1',
       trend: 'up' as const,
       icon: MessageCircle,
-      color: 'orange'
+      color: 'orange' as const
     },
     {
       title: 'Health Score',
@@ -36,7 +35,7 @@ const PatientDashboard = () => {
       change: '+5%',
       trend: 'up' as const,
       icon: CheckCircle,
-      color: 'purple'
+      color: 'purple' as const
     }
   ];
 
