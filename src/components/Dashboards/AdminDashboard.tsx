@@ -1,8 +1,9 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Users, TestTube, Calendar, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react';
+import { Users, TestTube, Calendar, TrendingUp, AlertCircle, CheckCircle, Upload, QrCode } from 'lucide-react';
 import StatsCard from './StatsCard';
+import FileUpload from '../Admin/FileUpload';
+import QRRegistration from '../Admin/QRRegistration';
 
 const AdminDashboard = () => {
   const stats = [
@@ -54,6 +55,12 @@ const AdminDashboard = () => {
     { name: 'Radiology Lab', current: 12, max: 20, percentage: 60 },
   ];
 
+  const handleFileUpload = (file: File) => {
+    console.log('Uploaded file:', file.name);
+    // Here you would typically process the census file
+    // For now, we'll just log it
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -66,9 +73,14 @@ const AdminDashboard = () => {
           <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
           <p className="text-gray-600 mt-1">Overview of system performance and user activity</p>
         </div>
-        <div className="mt-4 sm:mt-0">
-          <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-            Generate Report
+        <div className="mt-4 sm:mt-0 flex gap-2">
+          <button className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2">
+            <Upload className="h-4 w-4" />
+            Upload Census
+          </button>
+          <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2">
+            <QrCode className="h-4 w-4" />
+            QR Registration
           </button>
         </div>
       </motion.div>
@@ -87,13 +99,40 @@ const AdminDashboard = () => {
         ))}
       </div>
 
+      {/* File Upload and QR Registration */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* File Upload Section */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white rounded-xl shadow-sm border p-6"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <Upload className="h-6 w-6 text-green-600" />
+            <h3 className="text-lg font-semibold text-gray-900">Census File Upload</h3>
+          </div>
+          <p className="text-gray-600 mb-6">Upload patient census lists to bulk register users</p>
+          <FileUpload onFileUpload={handleFileUpload} />
+        </motion.div>
+
+        {/* QR Registration */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <QRRegistration />
+        </motion.div>
+      </div>
+
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Users */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.5 }}
           className="bg-white rounded-xl shadow-sm border p-6"
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent User Activity</h3>
@@ -128,7 +167,7 @@ const AdminDashboard = () => {
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.6 }}
           className="bg-white rounded-xl shadow-sm border p-6"
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Lab Capacity</h3>
@@ -160,7 +199,7 @@ const AdminDashboard = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
+        transition={{ delay: 0.7 }}
         className="bg-white rounded-xl shadow-sm border p-6"
       >
         <h3 className="text-lg font-semibold text-gray-900 mb-4">System Alerts</h3>
