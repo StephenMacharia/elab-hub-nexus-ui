@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Lightbulb, Heart, Activity, Apple, Brain, Shield } from 'lucide-react';
@@ -51,7 +50,7 @@ const PersonalizedHealthTips = () => {
       priority: 'low',
       basedOn: 'General wellness optimization'
     }
-  ];
+  ]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, Star, Award, Target, Zap, Medal } from 'lucide-react';
@@ -69,7 +68,7 @@ const GameficationPanel = () => {
       progress: 12,
       maxProgress: 30
     }
-  ];
+  ]);
 
   const [challenges] = useState<Challenge[]>([
     {
