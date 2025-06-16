@@ -2,6 +2,9 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, FileText, MessageCircle, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import StatsCard from './StatsCard';
+import WellnessTracker from '../Patient/WellnessTracker';
+import GameficationPanel from '../Patient/GameficationPanel';
+import PersonalizedHealthTips from '../Patient/PersonalizedHealthTips';
 
 const PatientDashboard = () => {
   const stats = [
@@ -157,13 +160,43 @@ const PatientDashboard = () => {
         ))}
       </div>
 
+      {/* Wellness Features Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Wellness Tracker */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <WellnessTracker />
+        </motion.div>
+
+        {/* Gamification Panel */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <GameficationPanel />
+        </motion.div>
+      </div>
+
+      {/* Personalized Health Tips */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        <PersonalizedHealthTips />
+      </motion.div>
+
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Upcoming Appointments */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.6 }}
           className="bg-white rounded-xl shadow-sm border p-6"
         >
           <div className="flex items-center justify-between mb-4">
@@ -221,7 +254,7 @@ const PatientDashboard = () => {
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.7 }}
           className="bg-white rounded-xl shadow-sm border p-6"
         >
           <div className="flex items-center justify-between mb-4">
@@ -266,7 +299,7 @@ const PatientDashboard = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
+        transition={{ delay: 0.8 }}
         className="bg-white rounded-xl shadow-sm border p-6"
       >
         <div className="flex items-center justify-between mb-4">
