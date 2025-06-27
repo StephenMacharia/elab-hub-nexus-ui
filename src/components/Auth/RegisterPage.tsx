@@ -1,10 +1,14 @@
-
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 import { TestTube, Mail, Lock, User, Eye, EyeOff, ArrowRight, Check } from 'lucide-react';
+import { registerUser } from '../../services/api'; // Make sure this matches your import path
 
 interface RegisterPageProps {
-  onRegister: (role: 'admin' | 'technician' | 'patient', email: string, name: string) => void;
+  onRegister: (role: 'admin' | 'lab_tech' | 'patient', email: string, name: string) => void;
   onSwitchToLogin: () => void;
 }
 
@@ -12,25 +16,52 @@ const RegisterPage = ({ onRegister, onSwitchToLogin }: RegisterPageProps) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    //role: '', // ✅ NEW
     password: '',
     confirmPassword: ''
   });
+
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<'admin' | 'technician' | 'patient'>('patient');
+  const [selectedRole, setSelectedRole] = useState<'admin' | 'lab_tech' | 'patient'>('patient');
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const navigate = useNavigate();
+
+  const isPasswordValid = (password: string) => {
+    const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^+=])[A-Za-z\d@$!%*?&#^+=]{8,}$/;
+    return strongRegex.test(password);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match');
+    const { name, email, phone, password, confirmPassword } = formData;
+
+    if (password !== confirmPassword) {
+      toast.error('❌ Passwords do not match.');
       return;
     }
-    
-    setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    onRegister(selectedRole, formData.email, formData.name);
-    setIsLoading(false);
+
+    if (!isPasswordValid(password)) {
+      toast.error('❌ Password must include uppercase, lowercase, number, and symbol, min 8 characters.');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const res = await registerUser(name, email, password,selectedRole); // ✅ include phone
+      localStorage.setItem('accessToken', res.access_token);
+      toast.success('✅ Account created successfully!');
+      onRegister(selectedRole, email, name);
+
+      // Redirect
+      if (selectedRole === 'admin') navigate('/admin/dashboard');
+      else if (selectedRole === 'lab_tech') navigate('/technician/dashboard');
+      else navigate('/patient/dashboard');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.detail || '❌ Registration failed.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const roleOptions = [
@@ -42,7 +73,7 @@ const RegisterPage = ({ onRegister, onSwitchToLogin }: RegisterPageProps) => {
       color: 'bg-blue-500'
     },
     {
-      role: 'technician' as const,
+      role: 'lab_tech' as const,
       title: 'Lab Technician',
       description: 'Process tests and manage lab operations',
       icon: TestTube,
@@ -59,13 +90,13 @@ const RegisterPage = ({ onRegister, onSwitchToLogin }: RegisterPageProps) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
+      <ToastContainer position="top-right" autoClose={3000} />
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5 }}
         className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg"
       >
-        {/* Header */}
         <div className="text-center mb-8">
           <motion.div
             initial={{ scale: 0 }}
@@ -79,30 +110,9 @@ const RegisterPage = ({ onRegister, onSwitchToLogin }: RegisterPageProps) => {
           <p className="text-gray-600">Create your account to get started</p>
         </div>
 
-        {/* Progress Steps */}
-        <div className="flex items-center justify-center mb-8">
-          <div className="flex items-center space-x-4">
-            <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
-              currentStep >= 1 ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'
-            }`}>
-              {currentStep > 1 ? <Check className="h-4 w-4" /> : '1'}
-            </div>
-            <div className={`h-1 w-16 ${currentStep >= 2 ? 'bg-green-500' : 'bg-gray-200'}`}></div>
-            <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
-              currentStep >= 2 ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'
-            }`}>
-              2
-            </div>
-          </div>
-        </div>
-
         <form onSubmit={handleSubmit} className="space-y-6">
           {currentStep === 1 && (
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="space-y-6"
-            >
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Choose Your Role</h3>
                 <div className="space-y-3">
@@ -126,78 +136,79 @@ const RegisterPage = ({ onRegister, onSwitchToLogin }: RegisterPageProps) => {
                           <p className="font-medium text-gray-900">{option.title}</p>
                           <p className="text-sm text-gray-600">{option.description}</p>
                         </div>
-                        {selectedRole === option.role && (
-                          <Check className="h-5 w-5 text-green-500 ml-auto" />
-                        )}
+                        {selectedRole === option.role && <Check className="h-5 w-5 text-green-500 ml-auto" />}
                       </div>
                     </motion.button>
                   ))}
                 </div>
               </div>
-
               <button
                 type="button"
                 onClick={() => setCurrentStep(2)}
                 className="w-full bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
               >
-                Continue
-                <ArrowRight className="h-4 w-4" />
+                Continue <ArrowRight className="h-4 w-4" />
               </button>
             </motion.div>
           )}
 
           {currentStep === 2 && (
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="space-y-6"
-            >
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
                     type="text"
                     required
                     value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                     placeholder="Enter your full name"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
                     type="email"
                     required
                     value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                     placeholder="Enter your email"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="tel"
+                    required
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                    placeholder="Enter your phone number"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
                     value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                     placeholder="Create a password"
                   />
                   <button
@@ -211,17 +222,15 @@ const RegisterPage = ({ onRegister, onSwitchToLogin }: RegisterPageProps) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirm Password
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
                     type="password"
                     required
                     value={formData.confirmPassword}
-                    onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                     placeholder="Confirm your password"
                   />
                 </div>
@@ -240,7 +249,7 @@ const RegisterPage = ({ onRegister, onSwitchToLogin }: RegisterPageProps) => {
                   whileTap={{ scale: 0.98 }}
                   type="submit"
                   disabled={isLoading}
-                  className="flex-1 bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="flex-1 bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-600 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isLoading ? (
                     <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -256,13 +265,7 @@ const RegisterPage = ({ onRegister, onSwitchToLogin }: RegisterPageProps) => {
           )}
         </form>
 
-        {/* Login Link */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="mt-6 text-center"
-        >
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="mt-6 text-center">
           <p className="text-gray-600">
             Already have an account?{' '}
             <button

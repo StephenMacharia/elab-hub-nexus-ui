@@ -1,343 +1,258 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Calendar, FileText, MessageCircle, Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import StatsCard from './StatsCard';
-import WellnessTracker from '../Patient/WellnessTracker';
-import GameficationPanel from '../Patient/GameficationPanel';
-import PersonalizedHealthTips from '../Patient/PersonalizedHealthTips';
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import {
+  Calendar,
+  FileText,
+  MessageCircle,
+  CheckCircle,
+} from "lucide-react";
+import {
+  getPatientDashboardStats,
+  getUpcomingAppointments,
+  getRecentTestResults,
+  getMessages,
+  handleApiError,
+} from "../../services/api";
+import StatsCard from "./StatsCard";
+import WellnessTracker from "../Patient/WellnessTracker";
+import GameficationPanel from "../Patient/GameficationPanel";
+import PersonalizedHealthTips from "../Patient/PersonalizedHealthTips";
+
+interface StatsResponse {
+  appointments: number;
+  test_results: number;
+  unread_messages: number;
+  health_score: string;
+}
+
+interface Appointment {
+  appointment_id: number;
+  test_name: string;
+  appointment_date: string;
+  appointment_time: string;
+  location: string;
+  status: string;
+  preparation?: string;
+}
+
+interface TestResult {
+  id: number;
+  test_name: string;
+  date: string;
+  status: string;
+}
+
+interface Message {
+  id: number;
+  sender_name: string;
+  subject: string;
+  preview: string;
+  sent_at: string;
+  unread: boolean;
+}
+
+// Helper functions
+const saveToStorage = (key: string, value: any) => {
+  localStorage.setItem(key, JSON.stringify(value));
+};
+
+const getFromStorage = <T,>(key: string): T | null => {
+  const value = localStorage.getItem(key);
+  return value ? JSON.parse(value) : null;
+};
 
 const PatientDashboard = () => {
-  const stats = [
+  const [username] = useState(localStorage.getItem("username") ?? "");
+  const [userId] = useState<number | null>(Number(localStorage.getItem("userId")) || null);
+
+  const [stats, setStats] = useState<StatsResponse | null>(getFromStorage("patient_stats"));
+  const [appointments, setAppointments] = useState<Appointment[]>(getFromStorage("patient_appointments") || []);
+  const [results, setResults] = useState<TestResult[]>(getFromStorage("patient_results") || []);
+  const [messages, setMessages] = useState<Message[]>(getFromStorage("patient_messages") || []);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const [s, a, r] = await Promise.all([
+          getPatientDashboardStats(),
+          getUpcomingAppointments(),
+          getRecentTestResults(),
+        ]);
+        setStats(s);
+        saveToStorage("patient_stats", s);
+
+        setAppointments(a);
+        saveToStorage("patient_appointments", a);
+
+        setResults(r);
+        saveToStorage("patient_results", r);
+
+        if (userId) {
+          const m = await getMessages(userId);
+          setMessages(m);
+          saveToStorage("patient_messages", m);
+        }
+      } catch (e) {
+        handleApiError(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAll();
+  }, [userId]);
+
+  if (loading)
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+
+  if (!stats)
+    return (
+      <div className="text-center text-gray-600 mt-10">
+        Could not load dashboard.
+      </div>
+    );
+
+  const statsCards = [
     {
-      title: 'Upcoming Tests',
-      value: '2',
-      change: '+1',
-      trend: 'up' as const,
+      title: "Upcoming Tests",
+      value: stats.appointments.toString(),
+      change: "",
+      trend: "up" as const,
       icon: Calendar,
-      color: 'blue' as const
+      color: "blue" as const,
     },
     {
-      title: 'Test Results',
-      value: '8',
-      change: '+2',
-      trend: 'up' as const,
+      title: "Test Results",
+      value: stats.test_results.toString(),
+      change: "",
+      trend: "up" as const,
       icon: FileText,
-      color: 'green' as const
+      color: "green" as const,
     },
     {
-      title: 'Unread Messages',
-      value: '3',
-      change: '+1',
-      trend: 'up' as const,
+      title: "Unread Messages",
+      value: stats.unread_messages.toString(),
+      change: "",
+      trend: "up" as const,
       icon: MessageCircle,
-      color: 'orange' as const
+      color: "orange" as const,
     },
     {
-      title: 'Health Score',
-      value: '85%',
-      change: '+5%',
-      trend: 'up' as const,
+      title: "Health Score",
+      value: stats.health_score,
+      change: "",
+      trend: "up" as const,
       icon: CheckCircle,
-      color: 'purple' as const
-    }
-  ];
-
-  const upcomingAppointments = [
-    {
-      id: 1,
-      test: 'Annual Blood Work',
-      date: 'Tomorrow',
-      time: '9:00 AM',
-      location: 'Main Lab',
-      status: 'Confirmed',
-      preparation: 'Fasting required (12 hours)'
+      color: "purple" as const,
     },
-    {
-      id: 2,
-      test: 'Follow-up Lipid Panel',
-      date: 'Dec 20, 2024',
-      time: '2:30 PM',
-      location: 'Cardiology Lab',
-      status: 'Confirmed',
-      preparation: 'No special preparation needed'
-    }
-  ];
-
-  const recentResults = [
-    {
-      id: 1,
-      test: 'Complete Blood Count',
-      date: 'Dec 10, 2024',
-      status: 'Normal',
-      viewable: true
-    },
-    {
-      id: 2,
-      test: 'Thyroid Function Test',
-      date: 'Dec 8, 2024',
-      status: 'Normal',
-      viewable: true
-    },
-    {
-      id: 3,
-      test: 'Vitamin D Level',
-      date: 'Dec 5, 2024',
-      status: 'Low',
-      viewable: true
-    },
-    {
-      id: 4,
-      test: 'Blood Glucose',
-      date: 'Dec 1, 2024',
-      status: 'Normal',
-      viewable: true
-    }
-  ];
-
-  const messages = [
-    {
-      from: 'Dr. Sarah Wilson',
-      subject: 'Your recent test results',
-      preview: 'Your blood work results look good. Please schedule a follow-up...',
-      time: '2 hours ago',
-      unread: true
-    },
-    {
-      from: 'Lab Services',
-      subject: 'Appointment reminder',
-      preview: 'This is a reminder for your appointment tomorrow at 9:00 AM...',
-      time: '1 day ago',
-      unread: true
-    },
-    {
-      from: 'Dr. Michael Chen',
-      subject: 'Prescription refill',
-      preview: 'Your prescription is ready for pickup at the pharmacy...',
-      time: '3 days ago',
-      unread: false
-    }
   ];
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'normal': return 'text-green-600 bg-green-100';
-      case 'low': return 'text-orange-600 bg-orange-100';
-      case 'high': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case "normal": return "text-green-600 bg-green-100";
+      case "low": return "text-orange-600 bg-orange-100";
+      case "high": return "text-red-600 bg-red-100";
+      default: return "text-gray-600 bg-gray-100";
     }
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Welcome back, John!</h1>
-          <p className="text-gray-600 mt-1">Here's an overview of your health journey</p>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Welcome back{username ? `, ${username}` : ""}!
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Here&apos;s an overview of your health journey
+          </p>
         </div>
-        <div className="mt-4 sm:mt-0">
-          <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-            Book Appointment
-          </button>
-        </div>
+        <button className="mt-4 sm:mt-0 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+          Book Appointment
+        </button>
       </motion.div>
 
-      {/* Stats Grid */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <motion.div
-            key={stat.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
+        {statsCards.map((stat, i) => (
+          <motion.div key={stat.title} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
             <StatsCard {...stat} />
           </motion.div>
         ))}
       </div>
 
-      {/* Wellness Features Row */}
+      {/* Wellness & Gamefication */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Wellness Tracker */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
-        >
+        <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
           <WellnessTracker />
         </motion.div>
-
-        {/* Gamification Panel */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
-        >
+        <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
           <GameficationPanel />
         </motion.div>
       </div>
 
-      {/* Personalized Health Tips */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-      >
-        <PersonalizedHealthTips />
-      </motion.div>
+      <PersonalizedHealthTips />
 
-      {/* Main Content Grid */}
+      {/* Appointments & Test Results */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Upcoming Appointments */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.6 }}
-          className="bg-white rounded-xl shadow-sm border p-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Upcoming Appointments</h3>
-            <Calendar className="h-5 w-5 text-gray-400" />
-          </div>
-          
-          <div className="space-y-4">
-            {upcomingAppointments.map((appointment, index) => (
-              <motion.div
-                key={appointment.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 + index * 0.1 }}
-                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h4 className="font-medium text-gray-900">{appointment.test}</h4>
-                    <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        {appointment.date}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {appointment.time}
-                      </span>
-                    </div>
-                  </div>
-                  <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                    {appointment.status}
-                  </span>
-                </div>
-                
-                <div className="text-sm text-gray-600 mb-3">
-                  <p><strong>Location:</strong> {appointment.location}</p>
-                  <p><strong>Preparation:</strong> {appointment.preparation}</p>
-                </div>
-                
-                <div className="flex gap-2">
-                  <button className="px-3 py-1 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 transition-colors">
-                    View Details
-                  </button>
-                  <button className="px-3 py-1 border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50 transition-colors">
-                    Reschedule
-                  </button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+        <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="bg-white rounded-xl shadow-sm border p-6">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Calendar className="h-5 w-5" /> Upcoming Appointments
+          </h3>
+          {appointments.length === 0 && <p className="text-gray-500">No upcoming appointments.</p>}
+          {appointments.map((a) => (
+            <div key={a.appointment_id} className="p-4 mb-3 border rounded-lg bg-gray-50">
+              <div className="font-medium text-gray-800">{a.test_name}</div>
+              <div className="text-sm text-gray-600">
+                {new Date(a.appointment_date).toLocaleDateString()} @ {a.appointment_time}
+              </div>
+              <div className="text-sm text-gray-600">📍 {a.location}</div>
+              {a.preparation && (
+                <div className="text-xs mt-1 text-blue-600">{a.preparation}</div>
+              )}
+            </div>
+          ))}
         </motion.div>
 
-        {/* Recent Test Results */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.7 }}
-          className="bg-white rounded-xl shadow-sm border p-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Recent Test Results</h3>
-            <FileText className="h-5 w-5 text-gray-400" />
-          </div>
-          
-          <div className="space-y-3">
-            {recentResults.map((result, index) => (
-              <motion.div
-                key={result.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 + index * 0.1 }}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <div>
-                  <p className="font-medium text-gray-900">{result.test}</p>
-                  <p className="text-sm text-gray-500">{result.date}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(result.status)}`}>
-                    {result.status}
-                  </span>
-                  {result.viewable && (
-                    <button className="text-blue-500 hover:text-blue-600 text-sm font-medium">
-                      View
-                    </button>
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-          
-          <button className="w-full mt-4 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-            View All Results
-          </button>
+        <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="bg-white rounded-xl shadow-sm border p-6">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <FileText className="h-5 w-5" /> Recent Results
+          </h3>
+          {results.length === 0 && <p className="text-gray-500">No results yet.</p>}
+          {results.map((r) => (
+            <div key={r.id} className="flex justify-between items-center p-3 mb-2 bg-gray-50 rounded-lg">
+              <div>
+                <p className="font-medium text-gray-800">{r.test_name}</p>
+                <p className="text-sm text-gray-500">
+                  {new Date(r.date).toLocaleDateString()}
+                </p>
+              </div>
+              <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(r.status)}`}>
+                {r.status}
+              </span>
+            </div>
+          ))}
         </motion.div>
       </div>
 
       {/* Messages */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8 }}
-        className="bg-white rounded-xl shadow-sm border p-6"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Messages</h3>
-          <MessageCircle className="h-5 w-5 text-gray-400" />
-        </div>
-        
-        <div className="space-y-4">
-          {messages.map((message, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 + index * 0.1 }}
-              className={`p-4 rounded-lg border cursor-pointer hover:shadow-md transition-shadow ${
-                message.unread ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
-              }`}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="font-medium text-gray-900">{message.from}</p>
-                    {message.unread && (
-                      <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
-                    )}
-                  </div>
-                  <p className="font-medium text-gray-800 text-sm mb-1">{message.subject}</p>
-                  <p className="text-sm text-gray-600">{message.preview}</p>
-                </div>
-                <span className="text-xs text-gray-500">{message.time}</span>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-        
-        <button className="w-full mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-          Open Chat
-        </button>
+      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white rounded-xl shadow-sm border p-6">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <MessageCircle className="h-5 w-5" /> Messages
+        </h3>
+        {messages.length === 0 && <p className="text-gray-500">No messages.</p>}
+        {messages.map((m) => (
+          <div key={m.id} className={`p-4 mb-3 border rounded-lg ${m.unread ? "bg-blue-50 border-blue-200" : "bg-gray-50"}`}>
+            <div className="font-medium">{m.subject}</div>
+            <p className="text-sm text-gray-600">{m.preview}</p>
+            <span className="text-xs text-gray-500">{new Date(m.sent_at).toLocaleString()}</span>
+          </div>
+        ))}
       </motion.div>
     </div>
   );

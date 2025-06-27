@@ -1,64 +1,75 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, TestTube, Calendar, TrendingUp, AlertCircle, CheckCircle, Upload, QrCode } from 'lucide-react';
+import { Users, Upload, QrCode, AlertCircle, CheckCircle } from 'lucide-react';
+import {
+  getAdminStats, getRecentUsers, getLabCapacity,
+  getAlerts, uploadCensus
+} from '../../services/api';
 import StatsCard from './StatsCard';
 import FileUpload from '../Admin/FileUpload';
 import QRRegistration from '../Admin/QRRegistration';
 
 const AdminDashboard = () => {
-  const stats = [
-    {
-      title: 'Total Users',
-      value: '2,847',
-      change: '+12%',
-      trend: 'up' as const,
-      icon: Users,
-      color: 'blue' as const
-    },
-    {
-      title: 'Active Labs',
-      value: '23',
-      change: '+2',
-      trend: 'up' as const,
-      icon: TestTube,
-      color: 'green' as const
-    },
-    {
-      title: 'Today\'s Appointments',
-      value: '186',
-      change: '-5%',
-      trend: 'down' as const,
-      icon: Calendar,
-      color: 'orange' as const
-    },
-    {
-      title: 'System Health',
-      value: '99.8%',
-      change: '+0.2%',
-      trend: 'up' as const,
-      icon: TrendingUp,
-      color: 'purple' as const
+  const [stats, setStats] = useState([]);
+  const [recentUsers, setRecentUsers] = useState([]);
+  const [userPage, setUserPage] = useState(1);
+  const [userTotal, setUserTotal] = useState(0);
+  const [labCapacity, setLabCapacity] = useState([]);
+  const [alerts, setAlerts] = useState([]);
+
+  const limit = 5;
+  const totalPages = Math.max(1, Math.ceil(userTotal / limit));
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [statsRes, labsRes, alertsRes] = await Promise.all([
+          getAdminStats(),
+          getLabCapacity(),
+          getAlerts()
+        ]);
+
+        const data = statsRes?.data || {};
+
+        const parsedStats = [
+          { title: "Total Users", value: data.total_users || 0, icon: "Users", color: "blue" },
+          { title: "Active Patients", value: data.active_patients || 0, icon: "Users", color: "green" },
+          { title: "Tests Conducted", value: data.total_tests || 0, icon: "TestTube", color: "purple" },
+          { title: "Appointments Today", value: data.todays_appointments || 0, icon: "Calendar", color: "orange" }
+        ];
+
+        setStats(parsedStats);
+        setLabCapacity(Array.isArray(labsRes) ? labsRes : []);
+        setAlerts(Array.isArray(alertsRes) ? alertsRes : []);
+      } catch (err) {
+        console.error('Error loading dashboard data:', err);
+      }
+    };
+    fetchDashboardData();
+  }, []);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await getRecentUsers();
+        setRecentUsers(res?.users || []);
+        setUserTotal(res?.total || 0);
+      } catch (err) {
+        console.error('Error loading recent users:', err);
+      }
+    };
+    fetchUsers();
+  }, [userPage]);
+
+  const handleFileUpload = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await uploadCensus(formData);
+      alert(res?.data?.message || 'Upload successful');
+    } catch (err) {
+      console.error('Upload failed:', err);
     }
-  ];
-
-  const recentUsers = [
-    { name: 'Dr. Sarah Wilson', role: 'Lab Technician', status: 'Active', time: '2 mins ago' },
-    { name: 'John Smith', role: 'Patient', status: 'Pending', time: '5 mins ago' },
-    { name: 'Dr. Michael Chen', role: 'Lab Technician', status: 'Active', time: '10 mins ago' },
-    { name: 'Emily Johnson', role: 'Patient', status: 'Active', time: '15 mins ago' },
-  ];
-
-  const labCapacity = [
-    { name: 'Main Lab', current: 45, max: 50, percentage: 90 },
-    { name: 'Cardiology Lab', current: 23, max: 30, percentage: 77 },
-    { name: 'Pathology Lab', current: 18, max: 25, percentage: 72 },
-    { name: 'Radiology Lab', current: 12, max: 20, percentage: 60 },
-  ];
-
-  const handleFileUpload = (file: File) => {
-    console.log('Uploaded file:', file.name);
-    // Here you would typically process the census file
-    // For now, we'll just log it
   };
 
   return (
@@ -74,10 +85,11 @@ const AdminDashboard = () => {
           <p className="text-gray-600 mt-1">Overview of system performance and user activity</p>
         </div>
         <div className="mt-4 sm:mt-0 flex gap-2">
-          <button className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2">
+          <label className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2 cursor-pointer">
             <Upload className="h-4 w-4" />
             Upload Census
-          </button>
+            <input type="file" hidden onChange={(e) => handleFileUpload(e.target.files?.[0])} />
+          </label>
           <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2">
             <QrCode className="h-4 w-4" />
             QR Registration
@@ -85,11 +97,11 @@ const AdminDashboard = () => {
         </div>
       </motion.div>
 
-      {/* Stats Grid */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
           <motion.div
-            key={stat.title}
+            key={stat.title || index}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
@@ -99,9 +111,8 @@ const AdminDashboard = () => {
         ))}
       </div>
 
-      {/* File Upload and QR Registration */}
+      {/* Upload and QR */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* File Upload Section */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -116,7 +127,6 @@ const AdminDashboard = () => {
           <FileUpload onFileUpload={handleFileUpload} />
         </motion.div>
 
-        {/* QR Registration */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -126,9 +136,8 @@ const AdminDashboard = () => {
         </motion.div>
       </div>
 
-      {/* Content Grid */}
+      {/* Recent Users */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Users */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -149,17 +158,32 @@ const AdminDashboard = () => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
-                    user.status === 'Active' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
+                  <span className={`inline-flex px-2 py-1 text-xs rounded-full ${user.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                     {user.status}
                   </span>
                   <p className="text-xs text-gray-500 mt-1">{user.time}</p>
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Pagination */}
+          <div className="mt-4 flex justify-center gap-4">
+            <button
+              disabled={userPage === 1}
+              onClick={() => setUserPage(p => p - 1)}
+              className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="text-sm text-gray-600">Page {userPage} of {totalPages}</span>
+            <button
+              disabled={userPage === totalPages}
+              onClick={() => setUserPage(p => p + 1)}
+              className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded disabled:opacity-50"
+            >
+              Next
+            </button>
           </div>
         </motion.div>
 
@@ -183,10 +207,7 @@ const AdminDashboard = () => {
                     initial={{ width: 0 }}
                     animate={{ width: `${lab.percentage}%` }}
                     transition={{ delay: 0.5 + index * 0.1, duration: 0.8 }}
-                    className={`h-2 rounded-full ${
-                      lab.percentage > 85 ? 'bg-red-500' :
-                      lab.percentage > 70 ? 'bg-yellow-500' : 'bg-green-500'
-                    }`}
+                    className={`h-2 rounded-full ${lab.percentage > 85 ? 'bg-red-500' : lab.percentage > 70 ? 'bg-yellow-500' : 'bg-green-500'}`}
                   />
                 </div>
               </div>
@@ -195,7 +216,7 @@ const AdminDashboard = () => {
         </motion.div>
       </div>
 
-      {/* System Alerts */}
+      {/* Alerts */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -204,22 +225,25 @@ const AdminDashboard = () => {
       >
         <h3 className="text-lg font-semibold text-gray-900 mb-4">System Alerts</h3>
         <div className="space-y-3">
-          <div className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <AlertCircle className="h-5 w-5 text-red-500" />
-            <div className="flex-1">
-              <p className="font-medium text-red-800">Main Lab approaching capacity</p>
-              <p className="text-sm text-red-600">Current utilization: 90% (45/50)</p>
+          {alerts.map((alert, index) => (
+            <div
+              key={index}
+              className={`flex items-center gap-3 p-3 ${alert.type === 'warning' ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'} rounded-lg`}
+            >
+              {alert.type === 'warning' ? (
+                <AlertCircle className="h-5 w-5 text-red-500" />
+              ) : (
+                <CheckCircle className="h-5 w-5 text-green-500" />
+              )}
+              <div className="flex-1">
+                <p className={`font-medium ${alert.type === 'warning' ? 'text-red-800' : 'text-green-800'}`}>{alert.title}</p>
+                <p className={`text-sm ${alert.type === 'warning' ? 'text-red-600' : 'text-green-600'}`}>{alert.message}</p>
+              </div>
+              <span className={`text-xs ${alert.type === 'warning' ? 'text-red-500' : 'text-green-500'}`}>
+                {new Date(alert.timestamp).toLocaleTimeString()}
+              </span>
             </div>
-            <span className="text-xs text-red-500">Just now</span>
-          </div>
-          <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-            <CheckCircle className="h-5 w-5 text-green-500" />
-            <div className="flex-1">
-              <p className="font-medium text-green-800">System backup completed successfully</p>
-              <p className="text-sm text-green-600">All data has been backed up securely</p>
-            </div>
-            <span className="text-xs text-green-500">5 mins ago</span>
-          </div>
+          ))}
         </div>
       </motion.div>
     </div>
