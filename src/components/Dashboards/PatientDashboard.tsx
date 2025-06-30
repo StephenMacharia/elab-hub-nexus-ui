@@ -153,6 +153,7 @@ const PatientDashboard = () => {
     {
       title: "Upcoming Tests",
       value: stats.appointments.toString(),
+      change: "+0", // Placeholder, replace with real data if available
       trend: "up" as const,
       icon: Calendar,
       color: "blue" as const,
@@ -160,6 +161,7 @@ const PatientDashboard = () => {
     {
       title: "Test Results",
       value: stats.test_results.toString(),
+      change: "+0", // Placeholder, replace with real data if available
       trend: "up" as const,
       icon: FileText,
       color: "green" as const,
@@ -167,6 +169,7 @@ const PatientDashboard = () => {
     {
       title: "Unread Messages",
       value: stats.unread_messages.toString(),
+      change: "+0", // Placeholder, replace with real data if available
       trend: "up" as const,
       icon: MessageCircle,
       color: "orange" as const,
@@ -174,6 +177,7 @@ const PatientDashboard = () => {
     {
       title: "Health Score",
       value: stats.health_score,
+      change: "+0", // Placeholder, replace with real data if available
       trend: "up" as const,
       icon: CheckCircle,
       color: "purple" as const,
