@@ -18,6 +18,9 @@ import WellnessTracker from "../Patient/WellnessTracker";
 import GameficationPanel from "../Patient/GameficationPanel";
 import PersonalizedHealthTips from "../Patient/PersonalizedHealthTips";
 
+// ==========================
+// 🧠 Types
+// ==========================
 interface StatsResponse {
   appointments: number;
   test_results: number;
@@ -51,24 +54,54 @@ interface Message {
   unread: boolean;
 }
 
-// Helper functions
+// ==========================
+// 🔧 Helpers
+// ==========================
 const saveToStorage = (key: string, value: any) => {
   localStorage.setItem(key, JSON.stringify(value));
 };
 
 const getFromStorage = <T,>(key: string): T | null => {
   const value = localStorage.getItem(key);
-  return value ? JSON.parse(value) : null;
+  if (!value || value === "undefined") return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    console.warn(`Invalid JSON in localStorage for key "${key}"`);
+    return null;
+  }
 };
 
+const getStatusColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case "normal": return "text-green-600 bg-green-100";
+    case "low": return "text-orange-600 bg-orange-100";
+    case "high": return "text-red-600 bg-red-100";
+    default: return "text-gray-600 bg-gray-100";
+  }
+};
+
+// ==========================
+// 📋 Main Component
+// ==========================
 const PatientDashboard = () => {
   const [username] = useState(localStorage.getItem("username") ?? "");
-  const [userId] = useState<number | null>(Number(localStorage.getItem("userId")) || null);
+  const [userId] = useState<number | null>(
+    Number(localStorage.getItem("userId")) || null
+  );
 
-  const [stats, setStats] = useState<StatsResponse | null>(getFromStorage("patient_stats"));
-  const [appointments, setAppointments] = useState<Appointment[]>(getFromStorage("patient_appointments") || []);
-  const [results, setResults] = useState<TestResult[]>(getFromStorage("patient_results") || []);
-  const [messages, setMessages] = useState<Message[]>(getFromStorage("patient_messages") || []);
+  const [stats, setStats] = useState<StatsResponse | null>(
+    getFromStorage("patient_stats")
+  );
+  const [appointments, setAppointments] = useState<Appointment[]>(
+    getFromStorage("patient_appointments") || []
+  );
+  const [results, setResults] = useState<TestResult[]>(
+    getFromStorage("patient_results") || []
+  );
+  const [messages, setMessages] = useState<Message[]>(
+    getFromStorage("patient_messages") || []
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -120,7 +153,6 @@ const PatientDashboard = () => {
     {
       title: "Upcoming Tests",
       value: stats.appointments.toString(),
-      change: "",
       trend: "up" as const,
       icon: Calendar,
       color: "blue" as const,
@@ -128,7 +160,6 @@ const PatientDashboard = () => {
     {
       title: "Test Results",
       value: stats.test_results.toString(),
-      change: "",
       trend: "up" as const,
       icon: FileText,
       color: "green" as const,
@@ -136,7 +167,6 @@ const PatientDashboard = () => {
     {
       title: "Unread Messages",
       value: stats.unread_messages.toString(),
-      change: "",
       trend: "up" as const,
       icon: MessageCircle,
       color: "orange" as const,
@@ -144,26 +174,20 @@ const PatientDashboard = () => {
     {
       title: "Health Score",
       value: stats.health_score,
-      change: "",
       trend: "up" as const,
       icon: CheckCircle,
       color: "purple" as const,
     },
   ];
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "normal": return "text-green-600 bg-green-100";
-      case "low": return "text-orange-600 bg-orange-100";
-      case "high": return "text-red-600 bg-red-100";
-      default: return "text-gray-600 bg-gray-100";
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between"
+      >
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
             Welcome back{username ? `, ${username}` : ""}!
@@ -177,10 +201,15 @@ const PatientDashboard = () => {
         </button>
       </motion.div>
 
-      {/* Stats Cards */}
+      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statsCards.map((stat, i) => (
-          <motion.div key={stat.title} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
+          <motion.div
+            key={stat.title}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+          >
             <StatsCard {...stat} />
           </motion.div>
         ))}
@@ -198,9 +227,13 @@ const PatientDashboard = () => {
 
       <PersonalizedHealthTips />
 
-      {/* Appointments & Test Results */}
+      {/* Appointments */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="bg-white rounded-xl shadow-sm border p-6">
+        <motion.div
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          className="bg-white rounded-xl shadow-sm border p-6"
+        >
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Calendar className="h-5 w-5" /> Upcoming Appointments
           </h3>
@@ -219,7 +252,12 @@ const PatientDashboard = () => {
           ))}
         </motion.div>
 
-        <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="bg-white rounded-xl shadow-sm border p-6">
+        {/* Test Results */}
+        <motion.div
+          initial={{ x: 20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          className="bg-white rounded-xl shadow-sm border p-6"
+        >
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <FileText className="h-5 w-5" /> Recent Results
           </h3>
@@ -241,16 +279,27 @@ const PatientDashboard = () => {
       </div>
 
       {/* Messages */}
-      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white rounded-xl shadow-sm border p-6">
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="bg-white rounded-xl shadow-sm border p-6"
+      >
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <MessageCircle className="h-5 w-5" /> Messages
         </h3>
         {messages.length === 0 && <p className="text-gray-500">No messages.</p>}
         {messages.map((m) => (
-          <div key={m.id} className={`p-4 mb-3 border rounded-lg ${m.unread ? "bg-blue-50 border-blue-200" : "bg-gray-50"}`}>
+          <div
+            key={m.id}
+            className={`p-4 mb-3 border rounded-lg ${
+              m.unread ? "bg-blue-50 border-blue-200" : "bg-gray-50"
+            }`}
+          >
             <div className="font-medium">{m.subject}</div>
             <p className="text-sm text-gray-600">{m.preview}</p>
-            <span className="text-xs text-gray-500">{new Date(m.sent_at).toLocaleString()}</span>
+            <span className="text-xs text-gray-500">
+              {new Date(m.sent_at).toLocaleString()}
+            </span>
           </div>
         ))}
       </motion.div>

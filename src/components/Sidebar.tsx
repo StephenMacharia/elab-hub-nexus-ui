@@ -1,89 +1,84 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Users, 
-  Calendar, 
-  TestTube, 
-  MessageCircle, 
-  BarChart3, 
-  Settings, 
+import {
+  Users,
+  Calendar,
+  TestTube,
+  MessageCircle,
+  BarChart3,
+  Settings,
   LogOut,
   X,
   FileText,
-  Clock,
-  User
+  User,
 } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { logoutUser } from '../services/api';
+import { ValidRoles } from '../types'; // Assuming you define this in a shared types file
 
 interface SidebarProps {
-  userRole: 'admin' | 'technician' | 'patient';
+  userRole: ValidRoles;
   onClose?: () => void;
-  onNavigate?: (page: string) => void;
 }
 
-const Sidebar = ({ userRole, onClose, onNavigate }: SidebarProps) => {
+const Sidebar = ({ userRole, onClose }: SidebarProps) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const basePath = `/${userRole}`;
+
   const adminMenuItems = [
-    { icon: BarChart3, label: 'Dashboard', active: true },
-    { icon: Users, label: 'Users', active: false },
-    { icon: TestTube, label: 'Labs', active: false },
-    { icon: Calendar, label: 'Appointments', active: false },
-    { icon: FileText, label: 'Reports', active: false },
-    { icon: Settings, label: 'Settings', active: false },
+    { icon: BarChart3, label: 'Dashboard', path: `${basePath}/dashboard` },
+    { icon: Users, label: 'Users', path: `${basePath}/users` },
+    { icon: TestTube, label: 'Labs', path: `${basePath}/labs` },
+    { icon: Calendar, label: 'Appointments', path: `${basePath}/appointments` },
+    { icon: FileText, label: 'Reports', path: `${basePath}/reports` },
+    { icon: Settings, label: 'Settings', path: `${basePath}/settings` },
   ];
 
   const technicianMenuItems = [
-    { icon: BarChart3, label: 'Dashboard', active: true },
-    { icon: TestTube, label: 'Test Queue', active: false },
-    { icon: FileText, label: 'Results', active: false },
-    { icon: MessageCircle, label: 'Messages', active: false },
-    { icon: Calendar, label: 'Schedule', active: false },
+    { icon: BarChart3, label: 'Dashboard', path: `${basePath}/dashboard` },
+    { icon: TestTube, label: 'Test Queue', path: `${basePath}/test-queue` },
+    { icon: FileText, label: 'Results', path: `${basePath}/results` },
+    { icon: MessageCircle, label: 'Messages', path: `${basePath}/chat` },
+    { icon: Calendar, label: 'Schedule', path: `${basePath}/schedule` },
   ];
 
   const patientMenuItems = [
-    { icon: BarChart3, label: 'Dashboard', active: true },
-    { icon: Calendar, label: 'Appointments', active: false },
-    { icon: FileText, label: 'Test Results', active: false },
-    { icon: MessageCircle, label: 'Chat', active: false },
-    { icon: User, label: 'Profile', active: false },
+    { icon: BarChart3, label: 'Dashboard', path: `${basePath}/dashboard` },
+    { icon: Calendar, label: 'Appointments', path: `${basePath}/appointments` },
+    { icon: FileText, label: 'Test Results', path: `${basePath}/test-results` },
+    { icon: MessageCircle, label: 'Chat', path: `${basePath}/chat` },
+    { icon: User, label: 'Profile', path: `${basePath}/profile` },
   ];
 
-  const menuItems = {
+  const menuMap = {
     admin: adminMenuItems,
-    technician: technicianMenuItems,
+    lab_tech: technicianMenuItems,
     patient: patientMenuItems,
-  }[userRole];
-
-  const roleColors = {
-    admin: 'bg-purple-500',
-    technician: 'bg-green-500', 
-    patient: 'bg-blue-500',
   };
 
   const roleLabels = {
     admin: 'Administrator',
-    technician: 'Lab Technician',
+    lab_tech: 'Lab Technician',
     patient: 'Patient',
   };
 
-  const handleNavigation = (label: string) => {
-    if (onNavigate) {
-      const pageMap: { [key: string]: string } = {
-        'Dashboard': 'dashboard',
-        'Appointments': 'appointments',
-        'Test Results': 'testResults',
-        'Test Queue': 'testResults',
-        'Results': 'testResults',
-        'Messages': 'chat',
-        'Chat': 'chat',
-        'Profile': 'profile',
-        'Logout': 'logout'
-      };
-      
-      const page = pageMap[label] || 'dashboard';
-      onNavigate(page);
-    }
-    
-    if (onClose) {
-      onClose();
+  const roleColors = {
+    admin: 'bg-purple-500',
+    lab_tech: 'bg-green-500',
+    patient: 'bg-blue-500',
+  };
+
+  const menuItems = menuMap[userRole];
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      localStorage.clear();
+      navigate('/');
+    } catch (err) {
+      console.error('Logout failed', err);
     }
   };
 
@@ -119,33 +114,40 @@ const Sidebar = ({ userRole, onClose, onNavigate }: SidebarProps) => {
       {/* Navigation */}
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
-          {menuItems.map((item, index) => (
-            <motion.li
-              key={item.label}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <button
-                onClick={() => handleNavigation(item.label)}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                  item.active
-                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                }`}
+          {menuItems.map((item, index) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <motion.li
+                key={item.label}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
               >
-                <item.icon className="h-5 w-5" />
-                <span className="font-medium">{item.label}</span>
-              </button>
-            </motion.li>
-          ))}
+                <button
+                  onClick={() => {
+                    navigate(item.path);
+                    window.scrollTo(0, 0);
+                    if (onClose) onClose();
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                    isActive
+                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <item.icon className="h-5 w-5" />
+                  <span className="font-medium">{item.label}</span>
+                </button>
+              </motion.li>
+            );
+          })}
         </ul>
       </nav>
 
       {/* Footer */}
       <div className="p-4 border-t">
-        <button 
-          onClick={() => handleNavigation('Logout')}
+        <button
+          onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
         >
           <LogOut className="h-5 w-5" />

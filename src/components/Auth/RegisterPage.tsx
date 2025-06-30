@@ -5,18 +5,13 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import { TestTube, Mail, Lock, User, Eye, EyeOff, ArrowRight, Check } from 'lucide-react';
-import { registerUser } from '../../services/api'; // Make sure this matches your import path
+import { registerUser } from '../../services/api';
 
-interface RegisterPageProps {
-  onRegister: (role: 'admin' | 'lab_tech' | 'patient', email: string, name: string) => void;
-  onSwitchToLogin: () => void;
-}
-
-const RegisterPage = ({ onRegister, onSwitchToLogin }: RegisterPageProps) => {
+const RegisterPage = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    //role: '', // ✅ NEW
+    phone: '',
     password: '',
     confirmPassword: ''
   });
@@ -48,15 +43,10 @@ const RegisterPage = ({ onRegister, onSwitchToLogin }: RegisterPageProps) => {
 
     try {
       setIsLoading(true);
-      const res = await registerUser(name, email, password,selectedRole); // ✅ include phone
-      localStorage.setItem('accessToken', res.access_token);
-      toast.success('✅ Account created successfully!');
-      onRegister(selectedRole, email, name);
+      await registerUser(name, email, password, selectedRole);
 
-      // Redirect
-      if (selectedRole === 'admin') navigate('/admin/dashboard');
-      else if (selectedRole === 'lab_tech') navigate('/technician/dashboard');
-      else navigate('/patient/dashboard');
+      toast.success('✅ Account created! Please log in.');
+      navigate("/login"); // 🔁 Redirect to login
     } catch (error: any) {
       toast.error(error?.response?.data?.detail || '❌ Registration failed.');
     } finally {
@@ -111,6 +101,7 @@ const RegisterPage = ({ onRegister, onSwitchToLogin }: RegisterPageProps) => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Step 1: Choose Role */}
           {currentStep === 1 && (
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
               <div>
@@ -152,8 +143,10 @@ const RegisterPage = ({ onRegister, onSwitchToLogin }: RegisterPageProps) => {
             </motion.div>
           )}
 
+          {/* Step 2: Registration Form */}
           {currentStep === 2 && (
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
+              {/* Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
                 <div className="relative">
@@ -169,6 +162,7 @@ const RegisterPage = ({ onRegister, onSwitchToLogin }: RegisterPageProps) => {
                 </div>
               </div>
 
+              {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                 <div className="relative">
@@ -184,6 +178,7 @@ const RegisterPage = ({ onRegister, onSwitchToLogin }: RegisterPageProps) => {
                 </div>
               </div>
 
+              {/* Phone */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                 <div className="relative">
@@ -199,6 +194,7 @@ const RegisterPage = ({ onRegister, onSwitchToLogin }: RegisterPageProps) => {
                 </div>
               </div>
 
+              {/* Password */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
                 <div className="relative">
@@ -221,6 +217,7 @@ const RegisterPage = ({ onRegister, onSwitchToLogin }: RegisterPageProps) => {
                 </div>
               </div>
 
+              {/* Confirm Password */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
                 <div className="relative">
@@ -269,7 +266,7 @@ const RegisterPage = ({ onRegister, onSwitchToLogin }: RegisterPageProps) => {
           <p className="text-gray-600">
             Already have an account?{' '}
             <button
-              onClick={onSwitchToLogin}
+              onClick={() => navigate("/login")}
               className="text-green-500 hover:text-green-600 font-medium transition-colors"
             >
               Sign In

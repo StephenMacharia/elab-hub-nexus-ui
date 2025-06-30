@@ -7,12 +7,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { TestTube, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { loginUser, getCurrentUser } from '../../services/api';
 
-interface LoginPageProps {
-  onLogin: (role: 'admin' | 'lab_tech' | 'patient', username: string) => void;
-  onSwitchToRegister: () => void;
-}
-
-const LoginPage = ({ onLogin, onSwitchToRegister }: LoginPageProps) => {
+const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -30,11 +25,11 @@ const LoginPage = ({ onLogin, onSwitchToRegister }: LoginPageProps) => {
       const user = await getCurrentUser();
       const { role, username: fetchedUsername } = user;
 
+      localStorage.setItem("user", JSON.stringify(user));
       localStorage.setItem("userRole", role);
       localStorage.setItem("username", fetchedUsername);
 
       toast.success('✅ Login successful!');
-      onLogin(role, fetchedUsername);
 
       if (role === 'admin') navigate('/admin/dashboard');
       else if (role === 'lab_tech') navigate('/technician/dashboard');
@@ -48,9 +43,9 @@ const LoginPage = ({ onLogin, onSwitchToRegister }: LoginPageProps) => {
   };
 
   const demoCredentials = [
-    { role: 'admin' as const, username: 'admin@elabhub.com', label: 'Administrator', color: 'bg-purple-500', password: 'admin123' },
-    { role: 'lab_tech' as const, username: 'tech@elabhub.com', label: 'Lab Technician', color: 'bg-green-500', password: 'tech123' },
-    { role: 'patient' as const, username: 'patient@elabhub.com', label: 'Patient', color: 'bg-blue-500', password: 'patient123' }
+    { role: 'admin', username: 'admin@elabhub.com', label: 'Administrator', color: 'bg-purple-500', password: 'admin123' },
+    { role: 'lab_tech', username: 'tech@elabhub.com', label: 'Lab Technician', color: 'bg-green-500', password: 'tech123' },
+    { role: 'patient', username: 'patient@elabhub.com', label: 'Patient', color: 'bg-blue-500', password: 'patient123' },
   ];
 
   return (
@@ -62,6 +57,7 @@ const LoginPage = ({ onLogin, onSwitchToRegister }: LoginPageProps) => {
         transition={{ duration: 0.5 }}
         className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md"
       >
+        {/* Header */}
         <div className="text-center mb-8">
           <motion.div
             initial={{ scale: 0 }}
@@ -75,6 +71,7 @@ const LoginPage = ({ onLogin, onSwitchToRegister }: LoginPageProps) => {
           <p className="text-gray-600">Sign in to E-Lab Hub</p>
         </div>
 
+        {/* Demo Credentials */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -95,13 +92,14 @@ const LoginPage = ({ onLogin, onSwitchToRegister }: LoginPageProps) => {
                 }}
                 className="w-full flex items-center gap-3 p-2 rounded-md hover:bg-white transition-colors text-left"
               >
-                <div className={`h-3 w-3 ${cred.color} rounded-full`}></div>
+                <div className={`h-3 w-3 ${cred.color} rounded-full`} />
                 <span className="text-sm text-gray-700">{cred.label}: {cred.username}</span>
               </motion.button>
             ))}
           </div>
         </motion.div>
 
+        {/* Login Form */}
         <motion.form
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -164,6 +162,7 @@ const LoginPage = ({ onLogin, onSwitchToRegister }: LoginPageProps) => {
           </motion.button>
         </motion.form>
 
+        {/* Register Redirect */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -173,7 +172,7 @@ const LoginPage = ({ onLogin, onSwitchToRegister }: LoginPageProps) => {
           <p className="text-gray-600">
             Don't have an account?{' '}
             <button
-              onClick={onSwitchToRegister}
+              onClick={() => navigate('/register')}
               className="text-blue-500 hover:text-blue-600 font-medium"
             >
               Create Account
