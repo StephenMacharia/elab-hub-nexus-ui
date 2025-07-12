@@ -10,11 +10,9 @@ const QRRegistration = () => {
   const generateQRCode = () => {
     setIsGenerating(true);
 
-    // Fixed registration URL
     const url = 'https://elab-hub-nexus-ui.vercel.app/register';
     setRegistrationUrl(url);
 
-    // Generate QR code
     setTimeout(() => {
       setQrCode(
         `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
@@ -123,9 +121,9 @@ const QRRegistration = () => {
               <h4 className="font-medium text-blue-900 mb-2">How to use:</h4>
               <ul className="text-sm text-blue-800 space-y-1">
                 <li>• Share this QR code with new users</li>
-                <li>• Users scan the code to access the registration form</li>
-                <li>• The registration link is valid for 30 days</li>
-                <li>• Track registrations in the user management section</li>
+                <li>• Users scan the code using a camera or QR app</li>
+                <li>• They will be auto-redirected to the registration form</li>
+                <li>• Link is valid anytime</li>
               </ul>
             </div>
           </motion.div>
