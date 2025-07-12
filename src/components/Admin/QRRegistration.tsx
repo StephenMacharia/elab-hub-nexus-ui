@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { QrCode, Copy, Download, RefreshCw } from 'lucide-react';
@@ -10,15 +9,18 @@ const QRRegistration = () => {
 
   const generateQRCode = () => {
     setIsGenerating(true);
-    
-    // Generate a unique registration URL
-    const uniqueId = Math.random().toString(36).substring(2, 15);
-    const url = 'https://elab-hub-nexus-ui.vercel.app/register`;
+
+    // Fixed registration URL
+    const url = 'https://elab-hub-nexus-ui.vercel.app/register';
     setRegistrationUrl(url);
-    
-    // Generate QR code (using a placeholder for now)
+
+    // Generate QR code
     setTimeout(() => {
-      setQrCode(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`);
+      setQrCode(
+        `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+          url
+        )}`
+      );
       setIsGenerating(false);
     }, 1000);
   };
@@ -52,7 +54,7 @@ const QRRegistration = () => {
               <>
                 <motion.div
                   animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                 >
                   <RefreshCw className="h-4 w-4" />
                 </motion.div>
@@ -75,9 +77,9 @@ const QRRegistration = () => {
           >
             <div className="flex justify-center">
               <div className="p-4 bg-white border-2 border-gray-200 rounded-lg">
-                <img 
-                  src={qrCode} 
-                  alt="Registration QR Code" 
+                <img
+                  src={qrCode}
+                  alt="Registration QR Code"
                   className="w-48 h-48"
                 />
               </div>
