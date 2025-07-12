@@ -1,79 +1,142 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Upload, QrCode, AlertCircle, CheckCircle } from 'lucide-react';
+import { Users, Upload, QrCode, AlertCircle, CheckCircle, Calendar, TestTube2 } from 'lucide-react';
 import {
-  getAdminStats, getRecentUsers, getLabCapacity,
-  getAlerts, uploadCensus
+  getAdminStats,
+  getRecentUsers,
+  getLabCapacity,
+  getAlerts,
+  uploadCensus,
+  handleApiError
 } from '../../services/api';
 import StatsCard from './StatsCard';
 import FileUpload from '../Admin/FileUpload';
 import QRRegistration from '../Admin/QRRegistration';
 
+interface FileUploadProps {
+  onFileUpload: (file: File) => void;
+  progress?: number;
+}
+
 const AdminDashboard = () => {
   const [stats, setStats] = useState([]);
   const [recentUsers, setRecentUsers] = useState([]);
-  const [userPage, setUserPage] = useState(1);
-  const [userTotal, setUserTotal] = useState(0);
   const [labCapacity, setLabCapacity] = useState([]);
   const [alerts, setAlerts] = useState([]);
-
-  const limit = 5;
-  const totalPages = Math.max(1, Math.ceil(userTotal / limit));
+  const [isLoading, setIsLoading] = useState(true);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [statsRes, labsRes, alertsRes] = await Promise.all([
+        setIsLoading(true);
+        const [statsRes, usersRes, labsRes, alertsRes] = await Promise.all([
           getAdminStats(),
+          getRecentUsers(),
           getLabCapacity(),
           getAlerts()
         ]);
 
-        const data = statsRes?.data || {};
-
-        const parsedStats = [
-          { title: "Total Users", value: data.total_users || 0, icon: "Users", color: "blue" },
-          { title: "Active Patients", value: data.active_patients || 0, icon: "Users", color: "green" },
-          { title: "Tests Conducted", value: data.total_tests || 0, icon: "TestTube", color: "purple" },
-          { title: "Appointments Today", value: data.todays_appointments || 0, icon: "Calendar", color: "orange" }
+        // Transform stats data for the frontend
+        const transformedStats = [
+          { 
+            title: "Total Users", 
+            value: statsRes.total_users || 0, 
+            icon: Users, 
+            color: "blue" 
+          },
+          { 
+            title: "Active Labs", 
+            value: statsRes.active_labs || 0, 
+            icon: Users, 
+            color: "green" 
+          },
+          { 
+            title: "Tests Conducted", 
+            value: statsRes.total_tests || 0, 
+            icon: TestTube2, 
+            color: "purple" 
+          },
+          { 
+            title: "Appointments Today", 
+            value: statsRes.appointments_today || 0, 
+            icon: Calendar, 
+            color: "orange" 
+          }
         ];
 
-        setStats(parsedStats);
-        setLabCapacity(Array.isArray(labsRes) ? labsRes : []);
-        setAlerts(Array.isArray(alertsRes) ? alertsRes : []);
+        setStats(transformedStats);
+        setRecentUsers(usersRes || []);
+        setLabCapacity(labsRes || []);
+        setAlerts(alertsRes || []);
       } catch (err) {
-        console.error('Error loading dashboard data:', err);
+        handleApiError(err, 'Failed to load dashboard data');
+      } finally {
+        setIsLoading(false);
       }
     };
+
     fetchDashboardData();
+
+    // Set up auto-refresh every 5 minutes
+    const interval = setInterval(fetchDashboardData, 300000);
+    return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await getRecentUsers();
-        setRecentUsers(res?.users || []);
-        setUserTotal(res?.total || 0);
-      } catch (err) {
-        console.error('Error loading recent users:', err);
-      }
-    };
-    fetchUsers();
-  }, [userPage]);
+  const handleFileUpload = async (file) => {
+    if (!file) return;
 
-  const handleFileUpload = async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
+
     try {
+      setUploadProgress(0);
       const res = await uploadCensus(formData);
-      alert(res?.data?.message || 'Upload successful');
+      // Refresh stats after successful upload
+      const statsRes = await getAdminStats();
+      setStats([
+        { 
+          title: "Total Users", 
+          value: statsRes.total_users, 
+          icon: Users, 
+          color: "blue" 
+        },
+        { 
+          title: "Active Labs", 
+          value: statsRes.active_labs, 
+          icon: Users, 
+          color: "green" 
+        },
+        { 
+          title: "Tests Conducted", 
+          value: statsRes.total_tests, 
+          icon: TestTube2, 
+          color: "purple" 
+        },
+        { 
+          title: "Appointments Today", 
+          value: statsRes.appointments_today, 
+          icon: Calendar, 
+          color: "orange" 
+        }
+      ]);
     } catch (err) {
-      console.error('Upload failed:', err);
+      handleApiError(err, 'Upload failed');
+    } finally {
+      setTimeout(() => setUploadProgress(0), 3000);
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -81,16 +144,24 @@ const AdminDashboard = () => {
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between"
       >
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Admin Dashboard</h1>
           <p className="text-gray-600 mt-1">Overview of system performance and user activity</p>
         </div>
         <div className="mt-4 sm:mt-0 flex gap-2">
           <label className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2 cursor-pointer">
             <Upload className="h-4 w-4" />
             Upload Census
-            <input type="file" hidden onChange={(e) => handleFileUpload(e.target.files?.[0])} />
+            <input 
+              type="file" 
+              hidden 
+              onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])} 
+              accept=".csv,.xlsx,.xls"
+            />
           </label>
-          <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2">
+          <button 
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+            onClick={() => (document.getElementById('qr_modal') as HTMLDialogElement)?.showModal()}
+          >
             <QrCode className="h-4 w-4" />
             QR Registration
           </button>
@@ -98,20 +169,27 @@ const AdminDashboard = () => {
       </motion.div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => (
           <motion.div
-            key={stat.title || index}
+            key={stat.title}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <StatsCard {...stat} />
+            <StatsCard 
+              title={stat.title}
+              value={stat.value}
+              icon={stat.icon}
+              color={stat.color}
+              change={stat.change ?? 0}
+              trend={stat.trend ?? 'neutral'}
+            />
           </motion.div>
         ))}
       </div>
 
-      {/* Upload and QR */}
+      {/* Upload and QR Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
@@ -124,20 +202,25 @@ const AdminDashboard = () => {
             <h3 className="text-lg font-semibold text-gray-900">Census File Upload</h3>
           </div>
           <p className="text-gray-600 mb-6">Upload patient census lists to bulk register users</p>
-          <FileUpload onFileUpload={handleFileUpload} />
+          <FileUpload 
+            onFileUpload={handleFileUpload} 
+            progress={uploadProgress}
+          />
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4 }}
+          className="bg-white rounded-xl shadow-sm border p-6"
         >
           <QRRegistration />
         </motion.div>
       </div>
 
-      {/* Recent Users */}
+      {/* Recent Users and Lab Capacity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Users */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -145,45 +228,40 @@ const AdminDashboard = () => {
           className="bg-white rounded-xl shadow-sm border p-6"
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent User Activity</h3>
-          <div className="space-y-4">
-            {recentUsers.map((user, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Users className="h-5 w-5 text-blue-600" />
+          <div className="space-y-4 max-h-96 overflow-y-auto">
+            {recentUsers.length > 0 ? (
+              recentUsers.map((user) => (
+                <div 
+                  key={user.id} 
+                  className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Users className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{user.username}</p>
+                      <p className="text-sm text-gray-500 capitalize">{user.role}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{user.name}</p>
-                    <p className="text-sm text-gray-500">{user.role}</p>
+                  <div className="text-right">
+                    <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                      user.is_active ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {user.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {user.last_login ? new Date(user.last_login).toLocaleString() : 'Never logged in'}
+                    </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className={`inline-flex px-2 py-1 text-xs rounded-full ${user.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                    {user.status}
-                  </span>
-                  <p className="text-xs text-gray-500 mt-1">{user.time}</p>
-                </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <Users className="mx-auto h-10 w-10 text-gray-400" />
+                <p className="text-gray-500 mt-2">No recent user activity</p>
               </div>
-            ))}
-          </div>
-
-          {/* Pagination */}
-          <div className="mt-4 flex justify-center gap-4">
-            <button
-              disabled={userPage === 1}
-              onClick={() => setUserPage(p => p - 1)}
-              className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <span className="text-sm text-gray-600">Page {userPage} of {totalPages}</span>
-            <button
-              disabled={userPage === totalPages}
-              onClick={() => setUserPage(p => p + 1)}
-              className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded disabled:opacity-50"
-            >
-              Next
-            </button>
+            )}
           </div>
         </motion.div>
 
@@ -196,22 +274,34 @@ const AdminDashboard = () => {
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Lab Capacity</h3>
           <div className="space-y-4">
-            {labCapacity.map((lab, index) => (
-              <div key={index} className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-gray-700">{lab.name}</span>
-                  <span className="text-sm text-gray-500">{lab.current}/{lab.max}</span>
+            {labCapacity.length > 0 ? (
+              labCapacity.map((lab) => (
+                <div key={lab.lab_id} className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-gray-700">{lab.name}</span>
+                    <span className="text-sm text-gray-500">
+                      {lab.current}/{lab.max} ({lab.percentage}%)
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${lab.percentage}%` }}
+                      transition={{ duration: 0.8 }}
+                      className={`h-2.5 rounded-full ${
+                        lab.percentage > 85 ? 'bg-red-500' : 
+                        lab.percentage > 70 ? 'bg-yellow-500' : 'bg-green-500'
+                      }`}
+                    />
+                  </div>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${lab.percentage}%` }}
-                    transition={{ delay: 0.5 + index * 0.1, duration: 0.8 }}
-                    className={`h-2 rounded-full ${lab.percentage > 85 ? 'bg-red-500' : lab.percentage > 70 ? 'bg-yellow-500' : 'bg-green-500'}`}
-                  />
-                </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <TestTube2 className="mx-auto h-10 w-10 text-gray-400" />
+                <p className="text-gray-500 mt-2">No lab capacity data available</p>
               </div>
-            ))}
+            )}
           </div>
         </motion.div>
       </div>
@@ -225,27 +315,60 @@ const AdminDashboard = () => {
       >
         <h3 className="text-lg font-semibold text-gray-900 mb-4">System Alerts</h3>
         <div className="space-y-3">
-          {alerts.map((alert, index) => (
-            <div
-              key={index}
-              className={`flex items-center gap-3 p-3 ${alert.type === 'warning' ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'} rounded-lg`}
-            >
-              {alert.type === 'warning' ? (
-                <AlertCircle className="h-5 w-5 text-red-500" />
-              ) : (
-                <CheckCircle className="h-5 w-5 text-green-500" />
-              )}
-              <div className="flex-1">
-                <p className={`font-medium ${alert.type === 'warning' ? 'text-red-800' : 'text-green-800'}`}>{alert.title}</p>
-                <p className={`text-sm ${alert.type === 'warning' ? 'text-red-600' : 'text-green-600'}`}>{alert.message}</p>
+          {alerts.length > 0 ? (
+            alerts.map((alert) => (
+              <div
+                key={alert.timestamp}
+                className={`flex items-center gap-3 p-3 rounded-lg ${
+                  alert.type === 'warning' ? 
+                  'bg-red-50 border border-red-200' : 
+                  'bg-green-50 border border-green-200'
+                }`}
+              >
+                {alert.type === 'warning' ? (
+                  <AlertCircle className="h-5 w-5 text-red-500" />
+                ) : (
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                )}
+                <div className="flex-1">
+                  <p className={`font-medium ${
+                    alert.type === 'warning' ? 'text-red-800' : 'text-green-800'
+                  }`}>
+                    {alert.title}
+                  </p>
+                  <p className={`text-sm ${
+                    alert.type === 'warning' ? 'text-red-600' : 'text-green-600'
+                  }`}>
+                    {alert.message}
+                  </p>
+                </div>
+                <span className={`text-xs ${
+                  alert.type === 'warning' ? 'text-red-500' : 'text-green-500'
+                }`}>
+                  {new Date(alert.timestamp).toLocaleTimeString()}
+                </span>
               </div>
-              <span className={`text-xs ${alert.type === 'warning' ? 'text-red-500' : 'text-green-500'}`}>
-                {new Date(alert.timestamp).toLocaleTimeString()}
-              </span>
+            ))
+          ) : (
+            <div className="text-center py-8">
+              <CheckCircle className="mx-auto h-10 w-10 text-green-400" />
+              <p className="text-gray-500 mt-2">No system alerts - all systems normal</p>
             </div>
-          ))}
+          )}
         </div>
       </motion.div>
+
+      {/* QR Modal */}
+      <dialog id="qr_modal" className="modal">
+        <div className="modal-box">
+          <QRRegistration />
+          <div className="modal-action">
+            <form method="dialog">
+              <button className="btn">Close</button>
+            </form>
+          </div>
+        </div>
+      </dialog>
     </div>
   );
 };

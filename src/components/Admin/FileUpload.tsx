@@ -1,3 +1,4 @@
+// src/components/Admin/FileUpload.tsx
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -7,9 +8,15 @@ interface FileUploadProps {
   onFileUpload: (file: File) => void;
   acceptedTypes?: string;
   maxSize?: number; // in MB
+  progress?: number; // 0 - 100
 }
 
-const FileUpload = ({ onFileUpload, acceptedTypes = ".csv,.xlsx,.xls", maxSize = 10 }: FileUploadProps) => {
+const FileUpload = ({
+  onFileUpload,
+  acceptedTypes = '.csv,.xlsx,.xls',
+  maxSize = 10,
+  progress
+}: FileUploadProps) => {
   const [dragActive, setDragActive] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -17,9 +24,9 @@ const FileUpload = ({ onFileUpload, acceptedTypes = ".csv,.xlsx,.xls", maxSize =
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
+    if (e.type === 'dragenter' || e.type === 'dragover') {
       setDragActive(true);
-    } else if (e.type === "dragleave") {
+    } else if (e.type === 'dragleave') {
       setDragActive(false);
     }
   };
@@ -51,11 +58,8 @@ const FileUpload = ({ onFileUpload, acceptedTypes = ".csv,.xlsx,.xls", maxSize =
     setUploadStatus('uploading');
     setUploadedFile(file);
 
-    // Simulate upload process
-    setTimeout(() => {
-      setUploadStatus('success');
-      onFileUpload(file);
-    }, 2000);
+    // Simulate upload delay
+    onFileUpload(file);
   };
 
   return (
@@ -64,8 +68,8 @@ const FileUpload = ({ onFileUpload, acceptedTypes = ".csv,.xlsx,.xls", maxSize =
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-          dragActive 
-            ? 'border-blue-500 bg-blue-50' 
+          dragActive
+            ? 'border-blue-500 bg-blue-50'
             : uploadStatus === 'success'
             ? 'border-green-500 bg-green-50'
             : uploadStatus === 'error'
@@ -106,7 +110,7 @@ const FileUpload = ({ onFileUpload, acceptedTypes = ".csv,.xlsx,.xls", maxSize =
             <div className="flex flex-col items-center">
               <motion.div
                 animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
               >
                 <Upload className="h-12 w-12 text-blue-500 mb-2" />
               </motion.div>
@@ -117,11 +121,26 @@ const FileUpload = ({ onFileUpload, acceptedTypes = ".csv,.xlsx,.xls", maxSize =
               <FileText className="h-12 w-12 text-gray-400 mb-2" />
               <p className="text-gray-700 font-medium">Drop your census file here</p>
               <p className="text-sm text-gray-500">or click to browse</p>
-              <p className="text-xs text-gray-400 mt-2">Supports CSV, Excel files (max {maxSize}MB)</p>
+              <p className="text-xs text-gray-400 mt-2">
+                Supports CSV, Excel files (max {maxSize}MB)
+              </p>
             </div>
           )}
         </div>
       </motion.div>
+
+      {/* Optional progress bar */}
+      {progress !== undefined && (
+        <div className="mt-4">
+          <div className="w-full bg-gray-200 rounded-full h-2.5">
+            <div
+              className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-in-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <p className="text-sm text-gray-600 mt-1 text-center">{progress}% uploaded</p>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,16 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Calendar,
-  FileText,
-  MessageCircle,
-  CheckCircle,
+  Calendar, FileText, MessageCircle, CheckCircle,
 } from "lucide-react";
 import {
   getPatientDashboardStats,
   getUpcomingAppointments,
   getRecentTestResults,
   getMessages,
+  createAppointment,
   handleApiError,
 } from "../../services/api";
 import StatsCard from "./StatsCard";
@@ -18,9 +16,6 @@ import WellnessTracker from "../Patient/WellnessTracker";
 import GameficationPanel from "../Patient/GameficationPanel";
 import PersonalizedHealthTips from "../Patient/PersonalizedHealthTips";
 
-// ==========================
-// 🧠 Types
-// ==========================
 interface StatsResponse {
   appointments: number;
   test_results: number;
@@ -54,11 +49,13 @@ interface Message {
   unread: boolean;
 }
 
-// ==========================
-// 🔧 Helpers
-// ==========================
+// Utility storage functions
 const saveToStorage = (key: string, value: any) => {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    console.warn(`Failed to save key "${key}" to storage`);
+  }
 };
 
 const getFromStorage = <T,>(key: string): T | null => {
@@ -81,9 +78,94 @@ const getStatusColor = (status: string) => {
   }
 };
 
-// ==========================
-// 📋 Main Component
-// ==========================
+const AppointmentModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  onAddAppointment: (appointment: {
+    test_name: string;
+    appointment_date: string;
+    appointment_time: string;
+    location: string;
+  }) => void;
+}> = ({ isOpen, onClose, onAddAppointment }) => {
+  const [testName, setTestName] = useState("");
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [location, setLocation] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onAddAppointment({
+      test_name: testName,
+      appointment_date: date,
+      appointment_time: time,
+      location,
+    });
+    onClose();
+    setTestName("");
+    setDate("");
+    setTime("");
+    setLocation("");
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h2 className="text-lg font-semibold mb-4">Book New Appointment</h2>
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <input
+            type="text"
+            placeholder="Test Name"
+            value={testName}
+            onChange={(e) => setTestName(e.target.value)}
+            className="w-full border border-gray-300 rounded px-3 py-2"
+            required
+          />
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-full border border-gray-300 rounded px-3 py-2"
+            required
+          />
+          <input
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            className="w-full border border-gray-300 rounded px-3 py-2"
+            required
+          />
+          <input
+            type="text"
+            placeholder="Location"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className="w-full border border-gray-300 rounded px-3 py-2"
+            required
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm bg-gray-200 rounded hover:bg-gray-300"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Book
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const PatientDashboard = () => {
   const [username] = useState(localStorage.getItem("username") ?? "");
   const [userId] = useState<number | null>(
@@ -93,16 +175,32 @@ const PatientDashboard = () => {
   const [stats, setStats] = useState<StatsResponse | null>(
     getFromStorage("patient_stats")
   );
-  const [appointments, setAppointments] = useState<Appointment[]>(
-    getFromStorage("patient_appointments") || []
-  );
-  const [results, setResults] = useState<TestResult[]>(
-    getFromStorage("patient_results") || []
-  );
-  const [messages, setMessages] = useState<Message[]>(
-    getFromStorage("patient_messages") || []
-  );
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [results, setResults] = useState<TestResult[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+
+  const handleAddAppointment = async (data: {
+    test_name: string;
+    appointment_date: string;
+    appointment_time: string;
+    location: string;
+  }) => {
+    try {
+      const saved = await createAppointment(data);
+      setAppointments((prev) => [...prev, saved]);
+
+      if (userId) {
+        const key = `appointments_user_${userId}`;
+        const local = getFromStorage<Appointment[]>(key) || [];
+        local.push(saved);
+        saveToStorage(key, local);
+      }
+    } catch (e) {
+      handleApiError(e, "Failed to create appointment");
+    }
+  };
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -115,9 +213,17 @@ const PatientDashboard = () => {
         setStats(s);
         saveToStorage("patient_stats", s);
 
-        setAppointments(a);
-        saveToStorage("patient_appointments", a);
+        const localAppointments =
+          getFromStorage<Appointment[]>(`appointments_user_${userId}`) || [];
+        const merged = [...a];
 
+        localAppointments.forEach((local) => {
+          if (!merged.some((apiApp) => apiApp.appointment_id === local.appointment_id)) {
+            merged.push(local);
+          }
+        });
+
+        setAppointments(merged);
         setResults(r);
         saveToStorage("patient_results", r);
 
@@ -127,33 +233,36 @@ const PatientDashboard = () => {
           saveToStorage("patient_messages", m);
         }
       } catch (e) {
-        handleApiError(e);
+        handleApiError(e, "Failed to load dashboard");
       } finally {
         setLoading(false);
       }
     };
+
     fetchAll();
   }, [userId]);
 
-  if (loading)
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
+  }
 
-  if (!stats)
+  if (!stats) {
     return (
       <div className="text-center text-gray-600 mt-10">
         Could not load dashboard.
       </div>
     );
+  }
 
   const statsCards = [
     {
       title: "Upcoming Tests",
-      value: stats.appointments.toString(),
-      change: "+0", // Placeholder, replace with real data if available
+      value: appointments.length.toString(),
+      change: "+0",
       trend: "up" as const,
       icon: Calendar,
       color: "blue" as const,
@@ -161,7 +270,7 @@ const PatientDashboard = () => {
     {
       title: "Test Results",
       value: stats.test_results.toString(),
-      change: "+0", // Placeholder, replace with real data if available
+      change: "+0",
       trend: "up" as const,
       icon: FileText,
       color: "green" as const,
@@ -169,7 +278,7 @@ const PatientDashboard = () => {
     {
       title: "Unread Messages",
       value: stats.unread_messages.toString(),
-      change: "+0", // Placeholder, replace with real data if available
+      change: "+0",
       trend: "up" as const,
       icon: MessageCircle,
       color: "orange" as const,
@@ -177,7 +286,7 @@ const PatientDashboard = () => {
     {
       title: "Health Score",
       value: stats.health_score,
-      change: "+0", // Placeholder, replace with real data if available
+      change: "+0",
       trend: "up" as const,
       icon: CheckCircle,
       color: "purple" as const,
@@ -186,7 +295,6 @@ const PatientDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -197,15 +305,23 @@ const PatientDashboard = () => {
             Welcome back{username ? `, ${username}` : ""}!
           </h1>
           <p className="text-gray-600 mt-1">
-            Here&apos;s an overview of your health journey
+            Here's an overview of your health journey
           </p>
         </div>
-        <button className="mt-4 sm:mt-0 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+        <button
+          onClick={() => setShowModal(true)}
+          className="mt-4 sm:mt-0 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+        >
           Book Appointment
         </button>
       </motion.div>
 
-      {/* Stats */}
+      <AppointmentModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onAddAppointment={handleAddAppointment}
+      />
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statsCards.map((stat, i) => (
           <motion.div
@@ -219,7 +335,6 @@ const PatientDashboard = () => {
         ))}
       </div>
 
-      {/* Wellness & Gamefication */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
           <WellnessTracker />
@@ -231,7 +346,6 @@ const PatientDashboard = () => {
 
       <PersonalizedHealthTips />
 
-      {/* Appointments */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <motion.div
           initial={{ x: -20, opacity: 0 }}
@@ -241,7 +355,9 @@ const PatientDashboard = () => {
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Calendar className="h-5 w-5" /> Upcoming Appointments
           </h3>
-          {appointments.length === 0 && <p className="text-gray-500">No upcoming appointments.</p>}
+          {appointments.length === 0 && (
+            <p className="text-gray-500">No upcoming appointments.</p>
+          )}
           {appointments.map((a) => (
             <div key={a.appointment_id} className="p-4 mb-3 border rounded-lg bg-gray-50">
               <div className="font-medium text-gray-800">{a.test_name}</div>
@@ -256,7 +372,6 @@ const PatientDashboard = () => {
           ))}
         </motion.div>
 
-        {/* Test Results */}
         <motion.div
           initial={{ x: 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
@@ -282,7 +397,6 @@ const PatientDashboard = () => {
         </motion.div>
       </div>
 
-      {/* Messages */}
       <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}

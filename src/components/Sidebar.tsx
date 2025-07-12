@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { logoutUser } from '../services/api';
-import { ValidRoles } from '../types'; // Assuming you define this in a shared types file
+
+export type ValidRoles = 'admin' | 'lab_tech' | 'patient';
 
 interface SidebarProps {
   userRole: ValidRoles;

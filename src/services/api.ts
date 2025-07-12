@@ -5,12 +5,14 @@ import { toast } from "react-toastify";
 // 🔧 Axios Setup
 // ==========================
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000",
+  baseURL: import.meta.env.VITE_API_URL || "https://elabs-project.onrender.com/",
 });
 
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("accessToken");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
@@ -19,7 +21,11 @@ API.interceptors.request.use((config) => {
 // ==========================
 export const handleApiError = (err: unknown, msg = "Something went wrong") => {
   console.error(err);
-  toast.error(`❌ ${msg}`);
+  if (axios.isAxiosError(err) && err.response?.data?.detail) {
+    toast.error(`❌ ${msg}: ${err.response.data.detail}`);
+  } else {
+    toast.error(`❌ ${msg}`);
+  }
 };
 
 // ==========================
@@ -31,9 +37,7 @@ export const loginUser = async (email: string, password: string) => {
   formData.append("password", password);
 
   const response = await API.post("/auth/login", formData, {
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
   });
 
   return response.data;
@@ -61,7 +65,27 @@ export const getCurrentUser = async () => {
   return res.data;
 };
 
-export const logoutUser = () => API.post("/auth/logout").then((res) => res.data);
+export const logoutUser = async () => {
+  try {
+    await API.post("/auth/logout");
+  } catch (e) {
+    console.warn("API logout failed, clearing local anyway.");
+  }
+
+  // Clear all local data
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("userId");
+  localStorage.removeItem("username");
+
+  Object.keys(localStorage).forEach((key) => {
+    if (
+      key.startsWith("appointments_user_") ||
+      key.startsWith("patient_")
+    ) {
+      localStorage.removeItem(key);
+    }
+  });
+};
 
 // ==========================
 // 👤 Patient Dashboard
@@ -75,6 +99,17 @@ export const getUpcomingAppointments = () =>
 export const getRecentTestResults = () =>
   API.get("/patient/test-results/recent").then((res) => res.data);
 
+// ✅ NEW: Create Appointment
+export const createAppointment = async (appointment: {
+  test_name: string;
+  appointment_date: string;
+  appointment_time: string;
+  location: string;
+}) => {
+  const res = await API.post("/patient/appointments", appointment);
+  return res.data;
+};
+
 // ==========================
 // 💬 Messages
 // ==========================
@@ -85,7 +120,7 @@ export const getTechnicianMessages = (userId: number) =>
   API.get(`/messages/${userId}`).then((res) => res.data);
 
 // ==========================
-// 📊 Admin Dashboard
+// 🧑‍⚕️ Admin Dashboard
 // ==========================
 export const getAdminStats = () =>
   API.get("/admin/dashboard-stats").then((res) => res.data);
@@ -133,10 +168,10 @@ export const getTechnicianStats = () =>
 export const getTestQueue = () =>
   API.get("/labtech/test-queue").then((res) => res.data);
 
-export const updateTestStatus = (testId: string, status: string) =>
-  API.post("/test-results", { testId, status });
+export const getTechnicianAppointments = () =>
+  API.get("/labtech/appointments").then((res) => res.data);
 
-// ✅ Create new test result
+// 🧾 Create new test result
 export const createTestResult = async (payload: {
   appointment_id: number;
   result_data: string;
@@ -146,14 +181,33 @@ export const createTestResult = async (payload: {
   return res.data;
 };
 
-// 🔁 Update test result status
-export const updateTestResultStatus = async (resultId: number, status: string) => {
+// 🛠 Update test result status
+export const updateTestResultStatus = async (
+  resultId: number,
+  status: string
+) => {
   const res = await API.put(`/test-results/${resultId}`, { status });
   return res.data;
 };
 
-// ⚠️ Workaround: Fetch test results for a patient
+// 🔍 Fetch test results for a patient
 export const getPatientTestResults = async (patientId: number) => {
   const res = await API.get(`/patients/${patientId}/test-results`);
   return res.data;
+};
+
+// 📨 Submit test result (used in TechnicianDashboard)
+export const submitTestResult = async (data: {
+  testId: number;
+  patientId: number;
+  result: string;
+  status: string;
+}) => {
+  const response = await API.post("/test-results", {
+    appointment_id: data.testId,
+    patient_id: data.patientId,
+    result_text: data.result,
+    result_status: data.status,
+  });
+  return response.data;
 };
