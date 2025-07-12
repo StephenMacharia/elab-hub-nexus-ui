@@ -13,7 +13,7 @@ const QRRegistration = () => {
     
     // Generate a unique registration URL
     const uniqueId = Math.random().toString(36).substring(2, 15);
-    const url = `https://elab-hub.com/register?code=${uniqueId}`;
+    const url = 'https://elab-hub-nexus-ui.vercel.app/register`;
     setRegistrationUrl(url);
     
     // Generate QR code (using a placeholder for now)
