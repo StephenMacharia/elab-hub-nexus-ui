@@ -1,3 +1,4 @@
+// src/components/PatientDashboard.tsx
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Calendar, FileText, MessageCircle, CheckCircle } from "lucide-react";
@@ -59,7 +60,6 @@ const AppointmentModal: React.FC<{
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     const newAppointment: Appointment = {
       appointment_id: Date.now(),
       test_name: testName,
@@ -68,10 +68,9 @@ const AppointmentModal: React.FC<{
       location,
       status: "scheduled",
     };
-
     try {
-      await createAppointment(newAppointment); // Store to backend
-      onAddAppointment(newAppointment);        // Store to local state + localStorage
+      await createAppointment(newAppointment);
+      onAddAppointment(newAppointment);
       onClose();
       setTestName("");
       setDate("");
@@ -131,7 +130,6 @@ const PatientDashboard = () => {
   const [userId] = useState<number | null>(
     Number(localStorage.getItem("userId")) || null
   );
-
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [results, setResults] = useState<TestResult[]>([]);
@@ -205,24 +203,32 @@ const PatientDashboard = () => {
     {
       title: "Upcoming Tests",
       value: appointments.length.toString(),
+      change: "+0%",
+      trend: "up",
       icon: Calendar,
       color: "blue",
     },
     {
       title: "Test Results",
       value: stats.test_results.toString(),
+      change: "+0%",
+      trend: "up",
       icon: FileText,
       color: "green",
     },
     {
       title: "Unread Messages",
       value: stats.unread_messages.toString(),
+      change: "-5%",
+      trend: "down",
       icon: MessageCircle,
       color: "orange",
     },
     {
       title: "Health Score",
       value: stats.health_score,
+      change: "+2%",
+      trend: "up",
       icon: CheckCircle,
       color: "purple",
     },
