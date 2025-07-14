@@ -1,4 +1,4 @@
-// src/components/StatsCard.tsx
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, LucideIcon } from 'lucide-react';
@@ -9,7 +9,9 @@ interface StatsCardProps {
   change: string;
   trend: 'up' | 'down';
   icon: LucideIcon;
-  color: 'blue' | 'green' | 'orange' | 'purple' | 'red';
+  color: 'blue' |
+
+ 'green' | 'orange' | 'purple' | 'red';
 }
 
 const StatsCard = ({ title, value, change, trend, icon: Icon, color }: StatsCardProps) => {
@@ -18,7 +20,7 @@ const StatsCard = ({ title, value, change, trend, icon: Icon, color }: StatsCard
     green: 'bg-green-500 text-green-600 bg-green-50',
     orange: 'bg-orange-500 text-orange-600 bg-orange-50',
     purple: 'bg-purple-500 text-purple-600 bg-purple-50',
-    red: 'bg-red-500 text-red-600 bg-red-50',
+    red: 'bg-red-500 text-red-600 bg-red-50'
   };
 
   const [bgColor, textColor, cardBg] = colorClasses[color].split(' ');
@@ -43,7 +45,7 @@ const StatsCard = ({ title, value, change, trend, icon: Icon, color }: StatsCard
           <span>{change}</span>
         </div>
       </div>
-
+      
       <div>
         <h3 className="text-2xl font-bold text-gray-900 mb-1">{value}</h3>
         <p className="text-sm text-gray-600">{title}</p>
