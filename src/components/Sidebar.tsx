@@ -38,11 +38,11 @@ const Sidebar = ({ userRole, onClose }: SidebarProps) => {
   ];
 
   const technicianMenuItems = [
-    { icon: BarChart3, label: 'Dashboard', path: `${basePath}/dashboard` },
-    { icon: TestTube, label: 'Test Queue', path: `${basePath}/test-queue` },
-    { icon: FileText, label: 'Results', path: `${basePath}/results` },
-    { icon: MessageCircle, label: 'Messages', path: `${basePath}/chat` },
-    { icon: Calendar, label: 'Schedule', path: `${basePath}/schedule` },
+    { icon: BarChart3, label: 'Dashboard', path: `${basePath}/technician/dashboard` },
+    { icon: TestTube, label: 'Test Queue', path: `${basePath}/technician/dashboard` },
+    { icon: FileText, label: 'Results', path: `${basePath}/technician/dashboard` },
+    { icon: MessageCircle, label: 'Messages', path: `${basePath}/technician/dashboard` },
+    { icon: Calendar, label: 'Schedule', path: `${basePath}/technician/dashboard` },
   ];
 
   const patientMenuItems = [
