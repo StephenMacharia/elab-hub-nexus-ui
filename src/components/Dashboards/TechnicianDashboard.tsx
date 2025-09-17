@@ -464,17 +464,27 @@ const TechnicianDashboard = () => {
       </motion.div>
 
       {/* Add Patient Modal */}
-      <Dialog open={showAddPatient} onOpenChange={setShowAddPatient}>
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Add Patient</h2>
-            <AddPatientForm
-              onSubmit={handleAddPatient}
-              onCancel={() => setShowAddPatient(false)}
-            />
+      {showAddPatient && (
+        <Dialog open={showAddPatient} onOpenChange={setShowAddPatient}>
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">
+            <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => setShowAddPatient(false)}
+                className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none"
+              >
+                ×
+              </button>
+              <h2 className="text-xl font-bold mb-4">Add Patient</h2>
+              <AddPatientForm
+                onSubmit={handleAddPatient}
+                onCancel={() => setShowAddPatient(false)}
+              />
+            </div>
           </div>
-        </div>
-      </Dialog>
+        </Dialog>
+      )}
 
 
       <NavigationTabs />
