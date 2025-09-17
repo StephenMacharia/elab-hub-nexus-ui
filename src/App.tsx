@@ -7,8 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import LoginPage from './components/Auth/LoginPage';       // ✅ Add this
-import RegisterPage from './components/Auth/RegisterPage'; // ✅ Add this
+import LoginPage from './components/Auth/LoginPage';       
+import RegisterPage from './components/Auth/RegisterPage'; 
 
 import PatientDashboard from './components/Dashboards/PatientDashboard';
 import AdminDashboard from './components/Dashboards/AdminDashboard';

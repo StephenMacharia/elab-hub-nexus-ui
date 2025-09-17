@@ -29,14 +29,14 @@ const LoginPage = () => {
       localStorage.setItem("userRole", role);
       localStorage.setItem("username", fetchedUsername);
 
-      toast.success('✅ Login successful!');
+      toast.success('Login successful!');
 
       if (role === 'admin') navigate('/admin/dashboard');
       else if (role === 'lab_tech') navigate('/technician/dashboard');
       else navigate('/patient/dashboard');
     } catch (err) {
       console.error("Login failed:", err);
-      toast.error('❌ Invalid username or password.');
+      toast.error('Invalid username or password.');
     } finally {
       setIsLoading(false);
     }
