@@ -160,6 +160,21 @@ interface Patient {
 const PATIENTS_KEY = "lab_patients";
 
 const TechnicianDashboard = () => {
+  // State for Add Patient modal
+  const [showAddPatient, setShowAddPatient] = useState(false);
+  const [patients, setPatients] = useState<Patient[]>(() => {
+    const stored = localStorage.getItem("patients");
+    return stored ? JSON.parse(stored) : [];
+  });
+
+  // Add patient handler
+  const handleAddPatient = (patient: Patient) => {
+    const updated = [...patients, patient];
+    setPatients(updated);
+    localStorage.setItem("patients", JSON.stringify(updated));
+    setShowAddPatient(false);
+    toast.success("Patient added successfully!");
+  };
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
