@@ -1,4 +1,6 @@
+
 import React, { useEffect, useState, useRef } from "react";
+import { Dialog } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
 import { Calendar, CheckCircle, Printer, MessageSquare, Clock, FileText, User } from "lucide-react";
 import jsPDF from "jspdf";
@@ -57,6 +59,66 @@ import { toast, ToastContainer } from "react-toastify";
 // import html2pdf from "html2pdf.js";
 import "react-toastify/dist/ReactToastify.css";
 
+// Patient type for modal
+interface Patient {
+  name: string;
+  dob: string;
+  gender: string;
+  mrn: string;
+}
+
+// AddPatientForm component
+function AddPatientForm({ onSubmit, onCancel }: { onSubmit: (p: Patient) => void; onCancel: () => void }) {
+  const [form, setForm] = useState<Patient>({ name: "", dob: "", gender: "", mrn: "" });
+  const [error, setError] = useState("");
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name || !form.dob || !form.gender || !form.mrn) {
+      setError("All fields are required.");
+      return;
+    }
+    setError("");
+    onSubmit(form);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium">Name</label>
+        <input name="name" value={form.name} onChange={handleChange} className="mt-1 p-2 border rounded w-full" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium">DOB</label>
+        <input name="dob" type="date" value={form.dob} onChange={handleChange} className="mt-1 p-2 border rounded w-full" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium">Gender</label>
+        <select name="gender" value={form.gender} onChange={handleChange} className="mt-1 p-2 border rounded w-full">
+          <option value="">Select</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div>
+        <label className="block text-sm font-medium">MRN</label>
+        <input name="mrn" value={form.mrn} onChange={handleChange} className="mt-1 p-2 border rounded w-full" />
+      </div>
+      {error && <div className="text-red-600 text-sm">{error}</div>}
+      <div className="flex gap-2 justify-end">
+        <button type="button" onClick={onCancel} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
+        <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded">Add</button>
+      </div>
+    </form>
+  );
+}
+
+
 interface Appointment {
   appointment_id: number;
   test_name: string;
@@ -98,43 +160,6 @@ interface Patient {
 const PATIENTS_KEY = "lab_patients";
 
 const TechnicianDashboard = () => {
-  // Patient modal state
-  const [openPatientModal, setOpenPatientModal] = useState(false);
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [patientForm, setPatientForm] = useState<Patient>({ name: "", dob: "", gender: "", mrn: "" });
-
-  // Load patients from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem(PATIENTS_KEY);
-    if (stored) {
-      try {
-        setPatients(JSON.parse(stored));
-      } catch {
-        setPatients([]);
-      }
-    }
-  }, []);
-
-  // Save patients to localStorage when changed
-  useEffect(() => {
-    localStorage.setItem(PATIENTS_KEY, JSON.stringify(patients));
-  }, [patients]);
-
-  const handlePatientInput = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setPatientForm({ ...patientForm, [e.target.name]: e.target.value });
-  };
-
-  const handleAddPatient = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!patientForm.name || !patientForm.dob || !patientForm.gender || !patientForm.mrn) {
-      toast.error("All fields are required");
-      return;
-    }
-    setPatients([...patients, patientForm]);
-    setPatientForm({ name: "", dob: "", gender: "", mrn: "" });
-    setOpenPatientModal(false);
-    toast.success("Patient added successfully");
-  };
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -429,51 +454,28 @@ const TechnicianDashboard = () => {
           <h1 className="text-3xl font-bold text-gray-900">Lab Technician Dashboard</h1>
           <p className="text-gray-600 mt-1">Manage patient appointments and test results efficiently</p>
         </div>
-        <Dialog open={openPatientModal} onOpenChange={setOpenPatientModal}>
-          <DialogTrigger asChild>
-            <button
-              className="mt-4 sm:mt-0 flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-            >
-              <User className="w-4 h-4" />
-              Add Patient
-            </button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Patient</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleAddPatient} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Name</label>
-                <input name="name" value={patientForm.name} onChange={handlePatientInput} className="w-full border rounded px-3 py-2" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Date of Birth</label>
-                <input name="dob" type="date" value={patientForm.dob} onChange={handlePatientInput} className="w-full border rounded px-3 py-2" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Gender</label>
-                <select name="gender" value={patientForm.gender} onChange={handlePatientInput} className="w-full border rounded px-3 py-2" required>
-                  <option value="">Select</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">MRN</label>
-                <input name="mrn" value={patientForm.mrn} onChange={handlePatientInput} className="w-full border rounded px-3 py-2" required />
-              </div>
-              <DialogFooter>
-                <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add</button>
-                <DialogClose asChild>
-                  <button type="button" className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300">Cancel</button>
-                </DialogClose>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <button
+          onClick={handleExportPDF}
+          className="mt-4 sm:mt-0 flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+        >
+          <Printer className="w-4 h-4" />
+          Export PDF
+        </button>
       </motion.div>
+
+      {/* Add Patient Modal */}
+      <Dialog open={showAddPatient} onOpenChange={setShowAddPatient}>
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Add Patient</h2>
+            <AddPatientForm
+              onSubmit={handleAddPatient}
+              onCancel={() => setShowAddPatient(false)}
+            />
+          </div>
+        </div>
+      </Dialog>
+
 
       <NavigationTabs />
       {renderContent()}
