@@ -41,6 +41,7 @@ const Sidebar = ({ userRole, onClose }: SidebarProps) => {
     { icon: BarChart3, label: 'Dashboard', path: `${basePath}/technician/dashboard` },
     { icon: TestTube, label: 'Test Queue', path: `${basePath}/technician/dashboard` },
     { icon: FileText, label: 'Results', path: `${basePath}/technician/dashboard` },
+    { icon: FileText, label: 'Reports', path: `${basePath}/technician/reports` },
     { icon: MessageCircle, label: 'Messages', path: `${basePath}/technician/dashboard` },
     { icon: Calendar, label: 'Schedule', path: `${basePath}/technician/dashboard` },
   ];

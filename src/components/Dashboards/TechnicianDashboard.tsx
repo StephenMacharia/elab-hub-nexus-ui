@@ -1,8 +1,60 @@
 import React, { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Calendar, CheckCircle, Printer, MessageSquare, Clock, FileText } from "lucide-react";
+import { Calendar, CheckCircle, Printer, MessageSquare, Clock, FileText, User } from "lucide-react";
+import jsPDF from "jspdf";
+  // Export handlers for patient data
+  const handleExportCSV = () => {
+    if (!patients.length) return toast.info("No patient data to export");
+    const header = "Name,DOB,Gender,MRN\n";
+    const rows = patients.map(p => `${p.name},${p.dob},${p.gender},${p.mrn}`).join("\n");
+    const csv = header + rows;
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "patients.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportExcel = () => {
+    if (!patients.length) return toast.info("No patient data to export");
+    // Simple Excel XML format for basic export
+    const header = "<tr><th>Name</th><th>DOB</th><th>Gender</th><th>MRN</th></tr>";
+    const rows = patients.map(p => `<tr><td>${p.name}</td><td>${p.dob}</td><td>${p.gender}</td><td>${p.mrn}</td></tr>`).join("");
+    const table = `<table>${header}${rows}</table>`;
+    const html = `<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body>${table}</body></html>`;
+    const blob = new Blob([html], { type: "application/vnd.ms-excel" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "patients.xls";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportPDF = () => {
+    if (!patients.length) return toast.info("No patient data to export");
+    const doc = new jsPDF();
+    doc.text("Patient List", 10, 10);
+    let y = 20;
+    doc.text("Name", 10, y);
+    doc.text("DOB", 60, y);
+    doc.text("Gender", 110, y);
+    doc.text("MRN", 150, y);
+    y += 8;
+    patients.forEach((p) => {
+      doc.text(p.name, 10, y);
+      doc.text(p.dob, 60, y);
+      doc.text(p.gender, 110, y);
+      doc.text(p.mrn, 150, y);
+      y += 8;
+    });
+    doc.save("patients.pdf");
+  };
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "../ui/dialog";
 import { toast, ToastContainer } from "react-toastify";
-import html2pdf from "html2pdf.js";
+// import html2pdf from "html2pdf.js";
 import "react-toastify/dist/ReactToastify.css";
 
 interface Appointment {
@@ -36,7 +88,53 @@ const syncAppointmentsToBackend = async (appointments: Appointment[]) => {
   return new Promise((resolve) => setTimeout(resolve, 500));
 };
 
+interface Patient {
+  name: string;
+  dob: string;
+  gender: string;
+  mrn: string;
+}
+
+const PATIENTS_KEY = "lab_patients";
+
 const TechnicianDashboard = () => {
+  // Patient modal state
+  const [openPatientModal, setOpenPatientModal] = useState(false);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [patientForm, setPatientForm] = useState<Patient>({ name: "", dob: "", gender: "", mrn: "" });
+
+  // Load patients from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem(PATIENTS_KEY);
+    if (stored) {
+      try {
+        setPatients(JSON.parse(stored));
+      } catch {
+        setPatients([]);
+      }
+    }
+  }, []);
+
+  // Save patients to localStorage when changed
+  useEffect(() => {
+    localStorage.setItem(PATIENTS_KEY, JSON.stringify(patients));
+  }, [patients]);
+
+  const handlePatientInput = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setPatientForm({ ...patientForm, [e.target.name]: e.target.value });
+  };
+
+  const handleAddPatient = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!patientForm.name || !patientForm.dob || !patientForm.gender || !patientForm.mrn) {
+      toast.error("All fields are required");
+      return;
+    }
+    setPatients([...patients, patientForm]);
+    setPatientForm({ name: "", dob: "", gender: "", mrn: "" });
+    setOpenPatientModal(false);
+    toast.success("Patient added successfully");
+  };
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,19 +192,7 @@ const TechnicianDashboard = () => {
     toast.success("Appointment marked as completed!");
   };
 
-  const handleExportPDF = () => {
-    if (printRef.current) {
-      html2pdf()
-        .set({
-          margin: 0.5,
-          filename: "appointments.pdf",
-          html2canvas: { scale: 2 },
-          jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
-        })
-        .from(printRef.current)
-        .save();
-    }
-  };
+  // Removed PDF export handler
 
   const updateTestStatus = (id: number, status: "Pending" | "In Progress" | "Completed") => {
     setTestQueue(testQueue.map(item => 
@@ -296,15 +382,15 @@ const TechnicianDashboard = () => {
         </table>
       </div>
       <div className="mt-4 flex gap-2">
-        <button className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-2">
+        <button onClick={handleExportPDF} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-2">
           <FileText className="w-4 h-4" />
           PDF
         </button>
-        <button className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-2">
+        <button onClick={handleExportExcel} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-2">
           <FileText className="w-4 h-4" />
           Excel
         </button>
-        <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2">
+        <button onClick={handleExportCSV} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2">
           <FileText className="w-4 h-4" />
           CSV
         </button>
@@ -343,13 +429,50 @@ const TechnicianDashboard = () => {
           <h1 className="text-3xl font-bold text-gray-900">Lab Technician Dashboard</h1>
           <p className="text-gray-600 mt-1">Manage patient appointments and test results efficiently</p>
         </div>
-        <button
-          onClick={handleExportPDF}
-          className="mt-4 sm:mt-0 flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
-        >
-          <Printer className="w-4 h-4" />
-          Export PDF
-        </button>
+        <Dialog open={openPatientModal} onOpenChange={setOpenPatientModal}>
+          <DialogTrigger asChild>
+            <button
+              className="mt-4 sm:mt-0 flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              <User className="w-4 h-4" />
+              Add Patient
+            </button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Patient</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleAddPatient} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Name</label>
+                <input name="name" value={patientForm.name} onChange={handlePatientInput} className="w-full border rounded px-3 py-2" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Date of Birth</label>
+                <input name="dob" type="date" value={patientForm.dob} onChange={handlePatientInput} className="w-full border rounded px-3 py-2" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Gender</label>
+                <select name="gender" value={patientForm.gender} onChange={handlePatientInput} className="w-full border rounded px-3 py-2" required>
+                  <option value="">Select</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">MRN</label>
+                <input name="mrn" value={patientForm.mrn} onChange={handlePatientInput} className="w-full border rounded px-3 py-2" required />
+              </div>
+              <DialogFooter>
+                <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add</button>
+                <DialogClose asChild>
+                  <button type="button" className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300">Cancel</button>
+                </DialogClose>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </motion.div>
 
       <NavigationTabs />
