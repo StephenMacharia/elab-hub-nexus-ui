@@ -1,9 +1,185 @@
-
 import React, { useEffect, useState, useRef } from "react";
-import { Dialog } from "@/components/ui/dialog";
+// Removed duplicate Dialog import
+
 import { motion } from "framer-motion";
 import { Calendar, CheckCircle, Printer, MessageSquare, Clock, FileText, User } from "lucide-react";
 import jsPDF from "jspdf";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "../ui/dialog";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+// Patient type for modal
+interface Patient {
+  name: string;
+  dob: string;
+  gender: string;
+  mrn: string;
+  testType: string;
+}
+
+// AddPatientForm component
+function AddPatientForm({ onSubmit, onCancel }: { onSubmit: (p: Patient) => void; onCancel: () => void }) {
+  const [form, setForm] = useState<Patient>({ name: "", dob: "", gender: "", mrn: "", testType: "" });
+  const [error, setError] = useState("");
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name || !form.dob || !form.gender || !form.mrn || !form.testType) {
+      setError("All fields are required.");
+      return;
+    }
+    setError("");
+    onSubmit(form);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium">Name</label>
+        <input name="name" value={form.name} onChange={handleChange} className="mt-1 p-2 border rounded w-full" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium">DOB</label>
+        <input name="dob" type="date" value={form.dob} onChange={handleChange} className="mt-1 p-2 border rounded w-full" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium">Gender</label>
+        <select name="gender" value={form.gender} onChange={handleChange} className="mt-1 p-2 border rounded w-full">
+          <option value="">Select</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div>
+        <label className="block text-sm font-medium">MRN</label>
+        <input name="mrn" value={form.mrn} onChange={handleChange} className="mt-1 p-2 border rounded w-full" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium">Test Type</label>
+        <input name="testType" value={form.testType} onChange={handleChange} className="mt-1 p-2 border rounded w-full" />
+      </div>
+      {error && <div className="text-red-600 text-sm">{error}</div>}
+      <div className="flex gap-2 justify-end">
+        <button type="button" onClick={onCancel} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
+        <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded">Add</button>
+      </div>
+    </form>
+  );
+}
+
+
+interface Appointment {
+  appointment_id: number;
+  test_name: string;
+  appointment_date: string;
+  appointment_time: string;
+  location: string;
+  status: string;
+  preparation?: string;
+}
+
+interface TestQueueItem {
+  id: number;
+  patientName: string;
+  mrn: string;
+  testType: string;
+  status: "Pending" | "In Progress" | "Completed";
+  time: string;
+}
+
+interface ResultItem {
+  patientName: string;
+  testType: string;
+  result: string;
+  time: string;
+}
+
+const syncAppointmentsToBackend = async (appointments: Appointment[]) => {
+  console.log("Syncing to backend:", appointments);
+  return new Promise((resolve) => setTimeout(resolve, 500));
+};
+
+const PATIENTS_KEY = "lab_patients";
+
+const TechnicianDashboard = () => {
+  const [showAddPatient, setShowAddPatient] = useState(false);
+  const [patients, setPatients] = useState<Patient[]>(() => {
+    const stored = localStorage.getItem("patients");
+    return stored ? JSON.parse(stored) : [];
+  });
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchText, setSearchText] = useState("");
+  const [searchDate, setSearchDate] = useState("");
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const printRef = useRef<HTMLDivElement>(null);
+
+  // Dummy data for test queue
+  const [testQueue, setTestQueue] = useState<TestQueueItem[]>(() => {
+    const stored = localStorage.getItem("testQueue");
+    if (stored) return JSON.parse(stored);
+    return [
+      { id: 1, patientName: "John Doe", mrn: "123456", testType: "Blood Test", status: "Pending", time: "09:00 AM" },
+      { id: 2, patientName: "Jane Smith", mrn: "654321", testType: "Urine Test", status: "In Progress", time: "08:45 AM" },
+      { id: 3, patientName: "Michael Johnson", mrn: "234567", testType: "Imaging", status: "Completed", time: "08:15 AM" },
+      { id: 4, patientName: "Emily Brown", mrn: "345678", testType: "Biopsy", status: "Pending", time: "07:30 AM" },
+    ];
+  });
+
+  // Dummy data for results
+  const [results, setResults] = useState<ResultItem[]>([
+    { patientName: "John Doe", testType: "Blood Test", result: "Normal", time: "08:15 AM" },
+    { patientName: "Michael Johnson", testType: "Imaging", result: "No abnormalities", time: "09:30 AM" },
+    { patientName: "Sarah Wilson", testType: "ECG", result: "Regular rhythm", time: "10:45 AM" },
+  ]);
+
+  useEffect(() => {
+    const storedAppointments = localStorage.getItem("local_patient_appointments");
+    if (storedAppointments) {
+      try {
+        const parsed = JSON.parse(storedAppointments);
+        setAppointments(parsed);
+        setFilteredAppointments(parsed);
+      } catch {
+        console.warn("Invalid local_patient_appointments data.");
+      }
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const filtered = appointments.filter((a) => {
+      const matchesTest = a.test_name.toLowerCase().includes(searchText.toLowerCase());
+      const matchesDate = searchDate ? a.appointment_date === searchDate : true;
+      return matchesTest && matchesDate;
+    });
+    setFilteredAppointments(filtered);
+  }, [searchText, searchDate, appointments]);
+
+  const handleMarkCompleted = async (id: number) => {
+    const updated = appointments.map((a) =>
+      a.appointment_id === id ? { ...a, status: "completed" } : a
+    );
+    setAppointments(updated);
+    setFilteredAppointments(updated);
+    localStorage.setItem("local_patient_appointments", JSON.stringify(updated));
+    await syncAppointmentsToBackend(updated);
+    toast.success("Appointment marked as completed!");
+  };
+
+  const updateTestStatus = (id: number, status: "Pending" | "In Progress" | "Completed") => {
+    setTestQueue(testQueue.map(item => 
+      item.id === id ? { ...item, status } : item
+    ));
+    toast.success(`Test status updated to ${status}`);
+  };
+
   // Export handlers for patient data
   const handleExportCSV = () => {
     if (!patients.length) return toast.info("No patient data to export");
@@ -53,192 +229,6 @@ import jsPDF from "jspdf";
       y += 8;
     });
     doc.save("patients.pdf");
-  };
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "../ui/dialog";
-import { toast, ToastContainer } from "react-toastify";
-// import html2pdf from "html2pdf.js";
-import "react-toastify/dist/ReactToastify.css";
-
-// Patient type for modal
-interface Patient {
-  name: string;
-  dob: string;
-  gender: string;
-  mrn: string;
-}
-
-// AddPatientForm component
-function AddPatientForm({ onSubmit, onCancel }: { onSubmit: (p: Patient) => void; onCancel: () => void }) {
-  const [form, setForm] = useState<Patient>({ name: "", dob: "", gender: "", mrn: "" });
-  const [error, setError] = useState("");
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.name || !form.dob || !form.gender || !form.mrn) {
-      setError("All fields are required.");
-      return;
-    }
-    setError("");
-    onSubmit(form);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium">Name</label>
-        <input name="name" value={form.name} onChange={handleChange} className="mt-1 p-2 border rounded w-full" />
-      </div>
-      <div>
-        <label className="block text-sm font-medium">DOB</label>
-        <input name="dob" type="date" value={form.dob} onChange={handleChange} className="mt-1 p-2 border rounded w-full" />
-      </div>
-      <div>
-        <label className="block text-sm font-medium">Gender</label>
-        <select name="gender" value={form.gender} onChange={handleChange} className="mt-1 p-2 border rounded w-full">
-          <option value="">Select</option>
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-      <div>
-        <label className="block text-sm font-medium">MRN</label>
-        <input name="mrn" value={form.mrn} onChange={handleChange} className="mt-1 p-2 border rounded w-full" />
-      </div>
-      {error && <div className="text-red-600 text-sm">{error}</div>}
-      <div className="flex gap-2 justify-end">
-        <button type="button" onClick={onCancel} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
-        <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded">Add</button>
-      </div>
-    </form>
-  );
-}
-
-
-interface Appointment {
-  appointment_id: number;
-  test_name: string;
-  appointment_date: string;
-  appointment_time: string;
-  location: string;
-  status: string;
-  preparation?: string;
-}
-
-interface TestQueueItem {
-  id: number;
-  patientName: string;
-  mrn: string;
-  testType: string;
-  status: "Pending" | "In Progress" | "Completed";
-  time: string;
-}
-
-interface ResultItem {
-  patientName: string;
-  testType: string;
-  result: string;
-  time: string;
-}
-
-const syncAppointmentsToBackend = async (appointments: Appointment[]) => {
-  console.log("Syncing to backend:", appointments);
-  return new Promise((resolve) => setTimeout(resolve, 500));
-};
-
-interface Patient {
-  name: string;
-  dob: string;
-  gender: string;
-  mrn: string;
-}
-
-const PATIENTS_KEY = "lab_patients";
-
-const TechnicianDashboard = () => {
-  // State for Add Patient modal
-  const [showAddPatient, setShowAddPatient] = useState(false);
-  const [patients, setPatients] = useState<Patient[]>(() => {
-    const stored = localStorage.getItem("patients");
-    return stored ? JSON.parse(stored) : [];
-  });
-
-  // Add patient handler
-  const handleAddPatient = (patient: Patient) => {
-    const updated = [...patients, patient];
-    setPatients(updated);
-    localStorage.setItem("patients", JSON.stringify(updated));
-    setShowAddPatient(false);
-    toast.success("Patient added successfully!");
-  };
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchText, setSearchText] = useState("");
-  const [searchDate, setSearchDate] = useState("");
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const printRef = useRef<HTMLDivElement>(null);
-
-  // Dummy data for test queue
-  const [testQueue, setTestQueue] = useState<TestQueueItem[]>([
-    { id: 1, patientName: "John Doe", mrn: "123456", testType: "Blood Test", status: "Pending", time: "09:00 AM" },
-    { id: 2, patientName: "Jane Smith", mrn: "654321", testType: "Urine Test", status: "In Progress", time: "08:45 AM" },
-    { id: 3, patientName: "Michael Johnson", mrn: "234567", testType: "Imaging", status: "Completed", time: "08:15 AM" },
-    { id: 4, patientName: "Emily Brown", mrn: "345678", testType: "Biopsy", status: "Pending", time: "07:30 AM" },
-  ]);
-
-  // Dummy data for results
-  const [results, setResults] = useState<ResultItem[]>([
-    { patientName: "John Doe", testType: "Blood Test", result: "Normal", time: "08:15 AM" },
-    { patientName: "Michael Johnson", testType: "Imaging", result: "No abnormalities", time: "09:30 AM" },
-    { patientName: "Sarah Wilson", testType: "ECG", result: "Regular rhythm", time: "10:45 AM" },
-  ]);
-
-  useEffect(() => {
-    const storedAppointments = localStorage.getItem("local_patient_appointments");
-    if (storedAppointments) {
-      try {
-        const parsed = JSON.parse(storedAppointments);
-        setAppointments(parsed);
-        setFilteredAppointments(parsed);
-      } catch {
-        console.warn("Invalid local_patient_appointments data.");
-      }
-    }
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    const filtered = appointments.filter((a) => {
-      const matchesTest = a.test_name.toLowerCase().includes(searchText.toLowerCase());
-      const matchesDate = searchDate ? a.appointment_date === searchDate : true;
-      return matchesTest && matchesDate;
-    });
-    setFilteredAppointments(filtered);
-  }, [searchText, searchDate, appointments]);
-
-  const handleMarkCompleted = async (id: number) => {
-    const updated = appointments.map((a) =>
-      a.appointment_id === id ? { ...a, status: "completed" } : a
-    );
-    setAppointments(updated);
-    setFilteredAppointments(updated);
-    localStorage.setItem("local_patient_appointments", JSON.stringify(updated));
-    await syncAppointmentsToBackend(updated);
-    toast.success("Appointment marked as completed!");
-  };
-
-  // Removed PDF export handler
-
-  const updateTestStatus = (id: number, status: "Pending" | "In Progress" | "Completed") => {
-    setTestQueue(testQueue.map(item => 
-      item.id === id ? { ...item, status } : item
-    ));
-    toast.success(`Test status updated to ${status}`);
   };
 
   const NavigationTabs = () => (
@@ -456,6 +446,33 @@ const TechnicianDashboard = () => {
     }
   };
 
+  // Add patient handler
+  const handleAddPatient = (patient: Patient) => {
+    const updated = [...patients, patient];
+    setPatients(updated);
+    localStorage.setItem("patients", JSON.stringify(updated));
+
+    // Add to test queue and persist
+    setTestQueue(prev => {
+      const newQueue = [
+        ...prev,
+        {
+          id: prev.length > 0 ? Math.max(...prev.map(q => q.id)) + 1 : 1,
+          patientName: patient.name,
+          mrn: patient.mrn,
+          testType: patient.testType,
+          status: "Pending",
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ];
+      localStorage.setItem("testQueue", JSON.stringify(newQueue));
+      return newQueue;
+    });
+
+    setShowAddPatient(false);
+    toast.success("Patient added successfully!");
+  };
+
   return (
     <div className="space-y-6">
       <ToastContainer />
@@ -469,13 +486,21 @@ const TechnicianDashboard = () => {
           <h1 className="text-3xl font-bold text-gray-900">Lab Technician Dashboard</h1>
           <p className="text-gray-600 mt-1">Manage patient appointments and test results efficiently</p>
         </div>
-        <button
-          onClick={handleExportPDF}
-          className="mt-4 sm:mt-0 flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
-        >
-          <Printer className="w-4 h-4" />
-          Export PDF
-        </button>
+        <div className="flex gap-2 mt-4 sm:mt-0">
+          <button
+            onClick={handleExportPDF}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+          >
+            <Printer className="w-4 h-4" />
+            Export PDF
+          </button>
+          <button
+            onClick={() => setShowAddPatient(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            + Add Patient
+          </button>
+        </div>
       </motion.div>
 
       {/* Add Patient Modal */}
