@@ -64,7 +64,7 @@ export default function ReportsPage() {
           </p>
         </CardHeader>
         <CardContent>
-          <div style={{ height: 220 }}>
+          <div style={{ height: 400 }}>
             <Bar data={barData} options={chartOptions} />
           </div>
         </CardContent>
@@ -77,7 +77,7 @@ export default function ReportsPage() {
           </p>
         </CardHeader>
         <CardContent>
-          <div style={{ height: 220 }}>
+          <div style={{ height: 400 }}>
             <Pie data={pieData} options={chartOptions} />
           </div>
         </CardContent>
@@ -90,7 +90,7 @@ export default function ReportsPage() {
           </p>
         </CardHeader>
         <CardContent>
-          <div style={{ height: 220 }}>
+          <div style={{ height: 400 }}>
             <Line data={lineData} options={chartOptions} />
           </div>
         </CardContent>
