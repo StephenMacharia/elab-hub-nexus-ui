@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { User, Mail, Phone, MapPin, Calendar, Edit, Save, X } from 'lucide-react';
-import Layout from '@/components/Layout';
 
 interface ProfileProps {
   userRole: 'admin' | 'technician' | 'patient';
@@ -39,8 +38,7 @@ const Profile = ({ userRole, userName }: ProfileProps) => {
   const readOnlyClasses = "text-gray-900 font-medium";
 
   return (
-    <Layout userRole={userRole} userName={userName}>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -276,7 +274,7 @@ const Profile = ({ userRole, userName }: ProfileProps) => {
           </motion.div>
         )}
       </div>
-    </Layout>
+
   );
 };
 

@@ -1,21 +1,6 @@
 import TestResults from './pages/TestResults';
-            <Route
-              path="/patient/test-results"
-              element={
-                <Layout>
-                  <TestResults userRole="patient" userName={localStorage.getItem("username") || "Patient"} />
-                </Layout>
-              }
-            />
 import SettingsPage from './pages/Settings';
-            <Route
-              path="/admin/settings"
-              element={
-                <Layout>
-                  <SettingsPage />
-                </Layout>
-              }
-            />
+import Profile from './pages/Profile';
 import UsersPage from './pages/Users';
 import Appointments from './pages/Appointments';
 import ReportsPage from './pages/Reports';
@@ -66,6 +51,38 @@ const App = () => {
               element={
                 <Layout userRole="patient">
                   <Chat userRole="patient" userName={localStorage.getItem("username") || "Patient"} />
+                </Layout>
+              }
+            />
+            <Route
+              path="/patient/test-results"
+              element={
+                <Layout>
+                  <TestResults userRole="patient" userName={localStorage.getItem("username") || "Patient"} />
+                </Layout>
+              }
+            />
+            <Route
+              path="/patient/profile"
+              element={
+                <Layout>
+                  <Profile userRole="patient" userName={localStorage.getItem("username") || "Patient"} />
+                </Layout>
+              }
+            />
+            <Route
+              path="/patient/settings"
+              element={
+                <Layout>
+                  <SettingsPage />
+                </Layout>
+              }
+            />
+            <Route
+              path="/admin/settings"
+              element={
+                <Layout>
+                  <SettingsPage />
                 </Layout>
               }
             />

@@ -2,11 +2,14 @@ import React from 'react';
 import { Users } from 'lucide-react';
 
 const dummyUsers = [
-  { id: 1, name: 'Alice Johnson', email: 'alice.johnson@example.com', role: 'Lab Technician', status: 'Active' },
-  { id: 2, name: 'Bob Smith', email: 'bob.smith@example.com', role: 'Admin', status: 'Active' },
-  { id: 3, name: 'Carol Lee', email: 'carol.lee@example.com', role: 'Technician', status: 'Inactive' },
-  { id: 4, name: 'David Kim', email: 'david.kim@example.com', role: 'Patient', status: 'Active' },
-  { id: 5, name: 'Eva Brown', email: 'eva.brown@example.com', role: 'Lab Technician', status: 'Active' },
+  { id: 1, name: 'Alice Johnson', email: 'alice.johnson@elabhub.com', role: 'Lab Technician', status: 'Active' },
+  { id: 2, name: 'Bob Smith', email: 'bob.smith@elabhub.com', role: 'Admin', status: 'Active' },
+  { id: 3, name: 'Carol Lee', email: 'carol.lee@elabhub.com', role: 'Technician', status: 'Inactive' },
+  { id: 4, name: 'David Kim', email: 'david.kim@elabhub.com', role: 'Patient', status: 'Active' },
+  { id: 5, name: 'Eva Brown', email: 'eva.brown@elabhub.com', role: 'Lab Technician', status: 'Active' },
+  { id: 6, name: 'Frank Green', email: 'frank.green@elabhub.com', role: 'Technician', status: 'Inactive' },
+  { id: 7, name: 'Grace Hopper', email: 'grace.hopper@elabhub.com', role: 'Admin', status: 'Active' },
+  { id: 8, name: 'Hank Pym', email: 'hank.pym@elabhub.com', role: 'Patient', status: 'Inactive' }
 ];
 
 const UsersPage = () => {
