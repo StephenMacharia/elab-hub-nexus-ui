@@ -442,31 +442,9 @@ const AdminDashboard = () => {
                 >
                   Clear
                 </button>
-                <button
-                  className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 w-full sm:w-auto"
-                  onClick={() => setShowReports((v) => !v)}
-                >
-                  {showReports ? "Hide Reports" : "Show Reports"}
-                </button>
               </div>
             </div>
           </div>
-          {showReports && (
-            <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-gray-50 rounded p-4">
-                <h4 className="font-semibold mb-2">Pie Chart</h4>
-                <StatusPieChart data={getStatusData()} />
-              </div>
-              <div className="bg-gray-50 rounded p-4">
-                <h4 className="font-semibold mb-2">Bar Chart</h4>
-                <StatusBarChart data={getStatusData()} />
-              </div>
-              <div className="bg-gray-50 rounded p-4">
-                <h4 className="font-semibold mb-2">Donut Chart</h4>
-                <StatusDonutChart data={getStatusData()} />
-              </div>
-            </div>
-          )}
           <div className="mb-4">
             <button
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"

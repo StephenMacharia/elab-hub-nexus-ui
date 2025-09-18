@@ -1,3 +1,12 @@
+import SettingsPage from './pages/Settings';
+            <Route
+              path="/admin/settings"
+              element={
+                <Layout>
+                  <SettingsPage />
+                </Layout>
+              }
+            />
 import UsersPage from './pages/Users';
 import Appointments from './pages/Appointments';
 import ReportsPage from './pages/Reports';
