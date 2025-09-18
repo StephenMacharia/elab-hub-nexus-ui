@@ -1,3 +1,18 @@
+  // Filter results when search term or results change
+  useEffect(() => {
+    if (!resultsSearchTerm) {
+      setFilteredResults(results);
+    } else {
+      const lower = resultsSearchTerm.toLowerCase();
+      setFilteredResults(
+        results.filter(
+          (item) =>
+            (item.patientName && item.patientName.toLowerCase().includes(lower)) ||
+            (item.mrn && item.mrn.toLowerCase().includes(lower))
+        )
+      );
+    }
+  }, [resultsSearchTerm, results]);
 import React, { useEffect, useState, useRef } from "react";
 // Removed duplicate Dialog import
 
@@ -118,6 +133,10 @@ const TechnicianDashboard = () => {
   const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
+
+  // Search/filter state for results
+  const [resultsSearchTerm, setResultsSearchTerm] = useState("");
+  const [filteredResults, setFilteredResults] = useState<ResultItem[]>([]);
   const [searchDate, setSearchDate] = useState("");
   const [activeTab, setActiveTab] = useState("dashboard");
   const printRef = useRef<HTMLDivElement>(null);
@@ -417,6 +436,29 @@ const TechnicianDashboard = () => {
   const renderResults = () => (
     <div className="bg-white rounded-xl shadow-sm border p-6">
       <h3 className="text-lg font-semibold mb-4">Results</h3>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+        <div className="flex gap-2 items-center">
+          <input
+            type="text"
+            placeholder="Search by name or MRN..."
+            value={resultsSearchTerm}
+            onChange={e => setResultsSearchTerm(e.target.value)}
+            className="border rounded px-3 py-2 text-sm"
+          />
+          <button
+            className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            onClick={() => setResultsSearchTerm(resultsSearchTerm)}
+          >
+            Search
+          </button>
+          <button
+            className="px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+            onClick={() => setResultsSearchTerm("")}
+          >
+            Clear
+          </button>
+        </div>
+      </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -428,14 +470,20 @@ const TechnicianDashboard = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {results.map((item, index) => (
-              <tr key={index}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.patientName}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.testType}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.result}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.time}</td>
+            {filteredResults.length > 0 ? (
+              filteredResults.map((item, index) => (
+                <tr key={index}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.patientName}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.testType}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.result}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.time}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={4} className="text-center py-8 text-gray-500">No results available</td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>

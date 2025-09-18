@@ -33,7 +33,7 @@ const AdminDashboard = () => {
   // Helper to aggregate status counts from labResults
   const getStatusData = () => {
     const statusCounts = { Pending: 0, "In Progress": 0, Completed: 0 };
-    labResults.forEach((item) => {
+    filteredLabResults.forEach((item) => {
       const status = (item.status || "Pending").toLowerCase();
       if (status.includes("progress")) statusCounts["In Progress"]++;
       else if (status.includes("complete")) statusCounts["Completed"]++;
@@ -45,6 +45,25 @@ const AdminDashboard = () => {
       { status: "Completed", value: statusCounts["Completed"] },
     ];
   };
+
+  // Search/filter state for lab results
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredLabResults, setFilteredLabResults] = useState([]);
+
+  useEffect(() => {
+    if (!searchTerm) {
+      setFilteredLabResults(labResults);
+    } else {
+      const lower = searchTerm.toLowerCase();
+      setFilteredLabResults(
+        labResults.filter(
+          (item) =>
+            (item.patientName && item.patientName.toLowerCase().includes(lower)) ||
+            (item.mrn && item.mrn.toLowerCase().includes(lower))
+        )
+      );
+    }
+  }, [searchTerm, labResults]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -292,21 +311,42 @@ const AdminDashboard = () => {
           </div>
         </motion.div>
 
-        {/* Lab Results (from TechnicianDashboard) - with checkboxes, download, and reports */}
+        {/* Lab Results (from TechnicianDashboard) - with checkboxes, download, reports, and search */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.6 }}
           className="bg-white rounded-xl shadow-sm border p-6"
         >
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Labs</h3>
-            <button
-              className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
-              onClick={() => setShowReports((v) => !v)}
-            >
-              {showReports ? "Hide Reports" : "Show Reports"}
-            </button>
+            <div className="flex gap-2 items-center">
+              <input
+                type="text"
+                placeholder="Search by name or MRN..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="border rounded px-3 py-2 text-sm"
+              />
+              <button
+                className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                onClick={() => setSearchTerm(searchTerm)}
+              >
+                Search
+              </button>
+              <button
+                className="px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                onClick={() => setSearchTerm("")}
+              >
+                Clear
+              </button>
+              <button
+                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                onClick={() => setShowReports((v) => !v)}
+              >
+                {showReports ? "Hide Reports" : "Show Reports"}
+              </button>
+            </div>
           </div>
           {showReports && (
             <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -331,7 +371,7 @@ const AdminDashboard = () => {
               onClick={() => {
                 // Download selected results as CSV
                 const header = "Patient Name,Test Type,Result,Time\n";
-                const rows = labResults
+                const rows = filteredLabResults
                   .filter((_, idx) => selectedResults.includes(idx))
                   .map(item => `${item.patientName},${item.testType},${item.result},${item.time}`)
                   .join("\n");
@@ -360,8 +400,8 @@ const AdminDashboard = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {labResults && labResults.length > 0 ? (
-                  labResults.map((item, index) => (
+                {filteredLabResults && filteredLabResults.length > 0 ? (
+                  filteredLabResults.map((item, index) => (
                     <tr key={index}>
                       <td className="px-4 py-4 whitespace-nowrap text-sm">
                         <input
