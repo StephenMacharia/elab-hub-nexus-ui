@@ -1,18 +1,6 @@
-  // Filter results when search term or results change
-  useEffect(() => {
-    if (!resultsSearchTerm) {
-      setFilteredResults(results);
-    } else {
-      const lower = resultsSearchTerm.toLowerCase();
-      setFilteredResults(
-        results.filter(
-          (item) =>
-            (item.patientName && item.patientName.toLowerCase().includes(lower)) ||
-            (item.mrn && item.mrn.toLowerCase().includes(lower))
-        )
-      );
-    }
-  }, [resultsSearchTerm, results]);
+// ...imports and code...
+// ...after all state variables are defined (after line 201, before render functions)...
+
 import React, { useEffect, useState, useRef } from "react";
 // Removed duplicate Dialog import
 
@@ -530,14 +518,14 @@ const TechnicianDashboard = () => {
 
     // Add to test queue and persist
     setTestQueue(prev => {
-      const newQueue = [
+      const newQueue: TestQueueItem[] = [
         ...prev,
         {
           id: prev.length > 0 ? Math.max(...prev.map(q => q.id)) + 1 : 1,
           patientName: patient.name,
           mrn: patient.mrn,
           testType: patient.testType,
-          status: "Pending",
+          status: "Pending" as "Pending",
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ];

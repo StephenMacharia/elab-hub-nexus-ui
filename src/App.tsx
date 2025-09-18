@@ -14,6 +14,7 @@ import PatientDashboard from './components/Dashboards/PatientDashboard';
 import AdminDashboard from './components/Dashboards/AdminDashboard';
 import TechnicianDashboard from './components/Dashboards/TechnicianDashboard';
 import Layout from './components/Layout';
+import Chat from './pages/Chat';
 
 const App = () => {
   const [queryClient] = useState(() => new QueryClient());
@@ -36,6 +37,14 @@ const App = () => {
               element={
                 <Layout>
                   <PatientDashboard />
+                </Layout>
+              }
+            />
+            <Route
+              path="/patient/chat"
+              element={
+                <Layout userRole="patient">
+                  <Chat userRole="patient" userName={localStorage.getItem("username") || "Patient"} />
                 </Layout>
               }
             />
