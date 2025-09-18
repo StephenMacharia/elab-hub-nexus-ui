@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Download, Eye, Calendar, Filter, Search } from 'lucide-react';
-import Layout from '@/components/Layout';
 
 interface TestResultsProps {
   userRole: 'admin' | 'technician' | 'patient';
@@ -86,8 +85,7 @@ const TestResults = ({ userRole, userName }: TestResultsProps) => {
   };
 
   return (
-    <Layout userRole={userRole} userName={userName}>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -201,8 +199,7 @@ const TestResults = ({ userRole, userName }: TestResultsProps) => {
             </div>
           </div>
         </motion.div>
-      </div>
-    </Layout>
+    </div>
   );
 };
 
