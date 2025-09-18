@@ -38,12 +38,12 @@ const Sidebar = ({ userRole, onClose }: SidebarProps) => {
   ];
 
   const technicianMenuItems = [
-    { icon: BarChart3, label: 'Dashboard', path: `${basePath}/technician/dashboard` },
-    { icon: TestTube, label: 'Test Queue', path: `${basePath}/technician/dashboard` },
-    { icon: FileText, label: 'Results', path: `${basePath}/technician/dashboard` },
-    { icon: FileText, label: 'Reports', path: `${basePath}/technician/reports` },
-    { icon: MessageCircle, label: 'Messages', path: `${basePath}/technician/dashboard` },
-    { icon: Calendar, label: 'Schedule', path: `${basePath}/technician/dashboard` },
+    { icon: BarChart3, label: 'Dashboard', path: `/technician/dashboard?tab=dashboard`},
+    { icon: TestTube, label: 'Test Queue', path: `/technician/dashboard?tab=testqueue`},
+    { icon: FileText, label: 'Results', path: `/technician/dashboard?tab=results`},
+    { icon: MessageCircle, label: 'Messages', path: `/technician/dashboard?tab=messages`},
+    { icon: Calendar, label: 'Schedule', path: `/technician/dashboard?tab=shedule`},
+    {icon: Calendar, lable: 'Reports', path: '/technician/dashboard?tab=reports'},
   ];
 
   const patientMenuItems = [
@@ -82,6 +82,16 @@ const Sidebar = ({ userRole, onClose }: SidebarProps) => {
     } catch (err) {
       console.error('Logout failed', err);
     }
+  };
+
+  const isMenuItemActive = (itemPath: string) => {
+    if (userRole === 'lab_tech') {
+      const urlParams = new URLSearchParams(location.search);
+      const currentTab = urlParams.get('tab') || 'dashboard';
+      const itemTab = new URLSearchParams(itemPath.split('?')[1] || '').get('tab') || 'dashboard';
+      return location.pathname.includes('/dashboard') && currentTab === itemTab;
+    }
+    return location.pathname === itemPath;
   };
 
   return (

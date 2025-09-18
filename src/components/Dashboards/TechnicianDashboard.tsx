@@ -7,6 +7,8 @@ import jsPDF from "jspdf";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "../ui/dialog";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useLocation, useNavigate, useNavigation } from "react-router-dom";
+
 
 // Patient type for modal
 interface Patient {
@@ -119,6 +121,23 @@ const TechnicianDashboard = () => {
   const [searchDate, setSearchDate] = useState("");
   const [activeTab, setActiveTab] = useState("dashboard");
   const printRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const tab = urlParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [location.search]);
+
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    const currentPath = location.pathname;
+    navigate(`${currentPath}?tab=${tabId}`, { replace: true });
+  };
 
   // Dummy data for test queue
   const [testQueue, setTestQueue] = useState<TestQueueItem[]>(() => {
