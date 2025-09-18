@@ -12,11 +12,11 @@ const Profile = ({ userRole, userName }: ProfileProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
     name: userName,
-    email: 'john.smith@email.com',
-    phone: '+1 (555) 123-4567',
-    address: '123 Main St, City, State 12345',
+    email: 'john.smith@gmail.com',
+    phone: '+2547 1234 5678',
+    address: 'Ruaka - Kiambu',
     dateOfBirth: '1990-05-15',
-    emergencyContact: 'Jane Smith - +1 (555) 987-6543',
+    emergencyContact: 'Jane Smith - +2547 4321 8765',
     bloodType: 'O+',
     allergies: 'Penicillin, Shellfish',
     medicalHistory: 'Hypertension, Diabetes Type 2'
