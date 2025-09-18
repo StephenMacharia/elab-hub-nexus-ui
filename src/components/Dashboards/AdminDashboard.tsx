@@ -23,6 +23,7 @@ const AdminDashboard = () => {
   const [recentUsers, setRecentUsers] = useState([]);
   // Remove labCapacity, add labResults
   const [labResults, setLabResults] = useState([]);
+  const [selectedResults, setSelectedResults] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -68,13 +69,14 @@ const AdminDashboard = () => {
 
         setStats(transformedStats);
         setRecentUsers(usersRes || []);
-        // Load lab results from localStorage
+        // Only fetch results from technician (localStorage)
         let results = [];
         try {
           const stored = localStorage.getItem("lab_results");
           if (stored) results = JSON.parse(stored);
         } catch {}
         setLabResults(results);
+        setSelectedResults([]);
         setAlerts(alertsRes || []);
       } catch (err) {
         handleApiError(err, 'Failed to load dashboard data');
@@ -272,7 +274,7 @@ const AdminDashboard = () => {
           </div>
         </motion.div>
 
-        {/* Lab Results (from TechnicianDashboard) */}
+        {/* Lab Results (from TechnicianDashboard) - with checkboxes and download */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -280,10 +282,35 @@ const AdminDashboard = () => {
           className="bg-white rounded-xl shadow-sm border p-6"
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Labs</h3>
+          <div className="mb-4">
+            <button
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              disabled={selectedResults.length === 0}
+              onClick={() => {
+                // Download selected results as CSV
+                const header = "Patient Name,Test Type,Result,Time\n";
+                const rows = labResults
+                  .filter((_, idx) => selectedResults.includes(idx))
+                  .map(item => `${item.patientName},${item.testType},${item.result},${item.time}`)
+                  .join("\n");
+                const csv = header + rows;
+                const blob = new Blob([csv], { type: "text/csv" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "selected_lab_results.csv";
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              Download Selected Results
+            </button>
+          </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-4 py-3"></th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test Type</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Result</th>
@@ -294,6 +321,19 @@ const AdminDashboard = () => {
                 {labResults && labResults.length > 0 ? (
                   labResults.map((item, index) => (
                     <tr key={index}>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm">
+                        <input
+                          type="checkbox"
+                          checked={selectedResults.includes(index)}
+                          onChange={e => {
+                            setSelectedResults(prev =>
+                              e.target.checked
+                                ? [...prev, index]
+                                : prev.filter(i => i !== index)
+                            );
+                          }}
+                        />
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.patientName}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.testType}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.result}</td>
@@ -302,7 +342,7 @@ const AdminDashboard = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="text-center py-8 text-gray-500">No lab results available</td>
+                    <td colSpan={5} className="text-center py-8 text-gray-500">No lab results available</td>
                   </tr>
                 )}
               </tbody>
