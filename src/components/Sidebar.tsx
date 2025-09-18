@@ -30,7 +30,7 @@ const Sidebar = ({ userRole, onClose }: SidebarProps) => {
   const basePath = `/${userRole}`;
 
   const adminMenuItems = [
-    { icon: BarChart3, label: 'Dashboard', path: `${basePath}/dashboard` },
+    { icon: BarChart3, label: 'Dashboard', path: '/admin/dashboard' },
     { icon: Users, label: 'Users', path: `${basePath}/users` },
     // Redirect Labs to TechnicianDashboard Results tab
     { icon: TestTube, label: 'Labs', path: `/technician/dashboard?tab=results` },
@@ -40,7 +40,7 @@ const Sidebar = ({ userRole, onClose }: SidebarProps) => {
   ];
 
   const technicianMenuItems = [
-    { icon: BarChart3, label: 'Dashboard', path: `/technician/dashboard?tab=dashboard`},
+    { icon: BarChart3, label: 'Dashboard', path: '/technician/dashboard?tab=dashboard'},
     { icon: TestTube, label: 'Test Queue', path: `/technician/dashboard?tab=testqueue`},
     { icon: FileText, label: 'Results', path: `/technician/dashboard?tab=results`},
     { icon: MessageCircle, label: 'Messages', path: `/technician/dashboard?tab=messages`},
@@ -49,7 +49,7 @@ const Sidebar = ({ userRole, onClose }: SidebarProps) => {
   ];
 
   const patientMenuItems = [
-    { icon: BarChart3, label: 'Dashboard', path: `${basePath}/dashboard` },
+    { icon: BarChart3, label: 'Dashboard', path: '/patient/dashboard' },
     { icon: Calendar, label: 'Appointments', path: `${basePath}/appointments` },
     { icon: FileText, label: 'Test Results', path: `${basePath}/test-results` },
     { icon: MessageCircle, label: 'Chat', path: `${basePath}/chat` },
@@ -91,7 +91,13 @@ const Sidebar = ({ userRole, onClose }: SidebarProps) => {
       const urlParams = new URLSearchParams(location.search);
       const currentTab = urlParams.get('tab') || 'dashboard';
       const itemTab = new URLSearchParams(itemPath.split('?')[1] || '').get('tab') || 'dashboard';
-      return location.pathname.includes('/dashboard') && currentTab === itemTab;
+      return location.pathname.includes('/technician/dashboard') && currentTab === itemTab;
+    }
+    if (userRole === 'admin') {
+      return location.pathname === '/admin/dashboard';
+    }
+    if (userRole === 'patient') {
+      return location.pathname === '/patient/dashboard';
     }
     return location.pathname === itemPath;
   };
@@ -129,7 +135,7 @@ const Sidebar = ({ userRole, onClose }: SidebarProps) => {
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
           {menuItems.map((item, index) => {
-            const isActive = location.pathname === item.path;
+            const isActive = isMenuItemActive(item.path);
             return (
               <motion.li
                 key={item.label}

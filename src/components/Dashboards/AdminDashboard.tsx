@@ -12,7 +12,7 @@ import {
 import StatsCard from './StatsCard';
 import FileUpload from '../Admin/FileUpload';
 import QRRegistration from '../Admin/QRRegistration';
-
+import { StatusPieChart, StatusBarChart, StatusDonutChart } from "../ui/StatusCharts";
 interface FileUploadProps {
   onFileUpload: (file: File) => void;
   progress?: number;
@@ -27,6 +27,24 @@ const AdminDashboard = () => {
   const [alerts, setAlerts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  const [showReports, setShowReports] = useState(false);
+
+  // Helper to aggregate status counts from labResults
+  const getStatusData = () => {
+    const statusCounts = { Pending: 0, "In Progress": 0, Completed: 0 };
+    labResults.forEach((item) => {
+      const status = (item.status || "Pending").toLowerCase();
+      if (status.includes("progress")) statusCounts["In Progress"]++;
+      else if (status.includes("complete")) statusCounts["Completed"]++;
+      else statusCounts["Pending"]++;
+    });
+    return [
+      { status: "Pending", value: statusCounts["Pending"] },
+      { status: "In Progress", value: statusCounts["In Progress"] },
+      { status: "Completed", value: statusCounts["Completed"] },
+    ];
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -274,14 +292,38 @@ const AdminDashboard = () => {
           </div>
         </motion.div>
 
-        {/* Lab Results (from TechnicianDashboard) - with checkboxes and download */}
+        {/* Lab Results (from TechnicianDashboard) - with checkboxes, download, and reports */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.6 }}
           className="bg-white rounded-xl shadow-sm border p-6"
         >
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Labs</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Labs</h3>
+            <button
+              className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+              onClick={() => setShowReports((v) => !v)}
+            >
+              {showReports ? "Hide Reports" : "Show Reports"}
+            </button>
+          </div>
+          {showReports && (
+            <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-gray-50 rounded p-4">
+                <h4 className="font-semibold mb-2">Pie Chart</h4>
+                <StatusPieChart data={getStatusData()} />
+              </div>
+              <div className="bg-gray-50 rounded p-4">
+                <h4 className="font-semibold mb-2">Bar Chart</h4>
+                <StatusBarChart data={getStatusData()} />
+              </div>
+              <div className="bg-gray-50 rounded p-4">
+                <h4 className="font-semibold mb-2">Donut Chart</h4>
+                <StatusDonutChart data={getStatusData()} />
+              </div>
+            </div>
+          )}
           <div className="mb-4">
             <button
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
