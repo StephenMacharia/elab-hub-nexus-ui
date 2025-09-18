@@ -16,7 +16,7 @@ const TestResults = ({ userRole, userName }: TestResultsProps) => {
     {
       id: 1,
       testName: 'Complete Blood Count',
-      patient: 'John Smith',
+      // patient: 'John Smith',
       date: '2024-12-15',
       status: 'Normal',
       category: 'Hematology',
@@ -26,7 +26,7 @@ const TestResults = ({ userRole, userName }: TestResultsProps) => {
     {
       id: 2,
       testName: 'Lipid Profile',
-      patient: 'Emily Johnson',
+      // patient: 'Emily Johnson',
       date: '2024-12-14',
       status: 'Abnormal',
       category: 'Chemistry',
@@ -36,7 +36,7 @@ const TestResults = ({ userRole, userName }: TestResultsProps) => {
     {
       id: 3,
       testName: 'Thyroid Function Test',
-      patient: 'Mike Davis',
+      // patient: 'Mike Davis',
       date: '2024-12-13',
       status: 'Normal',
       category: 'Endocrinology',
@@ -46,7 +46,7 @@ const TestResults = ({ userRole, userName }: TestResultsProps) => {
     {
       id: 4,
       testName: 'Glucose Test',
-      patient: 'Sarah Wilson',
+      // patient: 'Sarah Wilson',
       date: '2024-12-12',
       status: 'High',
       category: 'Chemistry',
@@ -56,7 +56,7 @@ const TestResults = ({ userRole, userName }: TestResultsProps) => {
     {
       id: 5,
       testName: 'Vitamin D Level',
-      patient: 'Alex Brown',
+      // patient: 'Alex Brown',
       date: '2024-12-11',
       status: 'Low',
       category: 'Chemistry',
@@ -154,10 +154,10 @@ const TestResults = ({ userRole, userName }: TestResultsProps) => {
                       <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
                         <FileText className="h-6 w-6 text-blue-600" />
                       </div>
-                      <div>
+                      {/* <div>
                         <h4 className="font-medium text-gray-900">{result.testName}</h4>
                         <p className="text-sm text-gray-600">{result.patient}</p>
-                      </div>
+                      </div> */}
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`px-2 py-1 text-xs rounded-full ${getCategoryColor(result.category)}`}>
