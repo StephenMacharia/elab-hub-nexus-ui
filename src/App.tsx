@@ -1,3 +1,12 @@
+import TestResults from './pages/TestResults';
+            <Route
+              path="/patient/test-results"
+              element={
+                <Layout>
+                  <TestResults userRole="patient" userName={localStorage.getItem("username") || "Patient"} />
+                </Layout>
+              }
+            />
 import SettingsPage from './pages/Settings';
             <Route
               path="/admin/settings"
