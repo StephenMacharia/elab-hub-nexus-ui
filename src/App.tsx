@@ -1,3 +1,11 @@
+            <Route
+              path="/patient/appointments"
+              element={
+                <Layout>
+                  <Appointments userRole="patient" userName={localStorage.getItem("username") || "Patient"} />
+                </Layout>
+              }
+            />
 import TestResults from './pages/TestResults';
 import SettingsPage from './pages/Settings';
 import Profile from './pages/Profile';
