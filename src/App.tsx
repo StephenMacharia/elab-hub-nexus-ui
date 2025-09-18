@@ -1,12 +1,6 @@
 import UsersPage from './pages/Users';
-            <Route
-              path="/admin/users"
-              element={
-                <Layout>
-                  <UsersPage />
-                </Layout>
-              }
-            />
+import Appointments from './pages/Appointments';
+import ReportsPage from './pages/Reports';
 import React, { useState } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -62,6 +56,30 @@ const App = () => {
               element={
                 <Layout>
                   <AdminDashboard />
+                </Layout>
+              }
+            />
+            <Route
+              path="/admin/appointments"
+              element={
+                <Layout>
+                  <Appointments userRole="admin" userName={localStorage.getItem("username") || "Admin"} />
+                </Layout>
+              }
+            />
+            <Route
+              path="/admin/reports"
+              element={
+                <Layout>
+                  <ReportsPage />
+                </Layout>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <Layout>
+                  <UsersPage />
                 </Layout>
               }
             />
