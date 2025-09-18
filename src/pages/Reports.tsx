@@ -1,3 +1,4 @@
+import '@/pages/chartjs-setup';
 import React from 'react';
 import { Bar, Pie } from 'react-chartjs-2';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
