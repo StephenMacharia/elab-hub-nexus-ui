@@ -10,6 +10,7 @@ import {
   LogOut,
   X,
   FileText,
+  Activity,
   User,
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -43,7 +44,7 @@ const Sidebar = ({ userRole, onClose }: SidebarProps) => {
     { icon: FileText, label: 'Results', path: `/technician/dashboard?tab=results`},
     { icon: MessageCircle, label: 'Messages', path: `/technician/dashboard?tab=messages`},
     { icon: Calendar, label: 'Schedule', path: `/technician/dashboard?tab=shedule`},
-    {icon: Calendar, lable: 'Reports', path: '/technician/dashboard?tab=reports'},
+  {icon: Activity, label: 'Reports', path: '/technician/dashboard?tab=reports'},
   ];
 
   const patientMenuItems = [
