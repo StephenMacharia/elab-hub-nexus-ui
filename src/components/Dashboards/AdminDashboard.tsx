@@ -14,6 +14,8 @@ import StatsCard from './StatsCard';
 import FileUpload from '../Admin/FileUpload';
 import QRRegistration from '../Admin/QRRegistration';
 import { StatusPieChart, StatusBarChart, StatusDonutChart } from "../ui/StatusCharts";
+import ReportsPage from '../../pages/Reports';
+
 interface FileUploadProps {
   onFileUpload: (file: File) => void;
   progress?: number;
@@ -241,6 +243,13 @@ const AdminDashboard = () => {
           </label>
           <button 
             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+            onClick={() => setShowReports((prev) => !prev)}
+          >
+            <TestTube2 className="h-4 w-4" />
+            {showReports ? 'Hide Reports' : 'View Reports'}
+          </button>
+          <button 
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
             onClick={() => (document.getElementById('qr_modal') as HTMLDialogElement)?.showModal()}
           >
             <QrCode className="h-4 w-4" />
@@ -248,6 +257,13 @@ const AdminDashboard = () => {
           </button>
         </div>
       </motion.div>
+
+      {/* Reports Section */}
+      {showReports && (
+        <div className="my-6">
+          <ReportsPage />
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
