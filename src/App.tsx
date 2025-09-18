@@ -1,3 +1,12 @@
+import UsersPage from './pages/Users';
+            <Route
+              path="/admin/users"
+              element={
+                <Layout>
+                  <UsersPage />
+                </Layout>
+              }
+            />
 import React, { useState } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";

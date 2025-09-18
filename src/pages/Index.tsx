@@ -51,31 +51,17 @@ const Index = () => {
     setCurrentPage(page as PageType);
   };
 
-  const renderDashboard = () => {
-    if (!user) return null;
+  // Removed renderDashboard to avoid double rendering of dashboards
 
-    switch (user.role) {
-      case 'admin':
-        return <AdminDashboard />;
-      case 'technician':
-        return <TechnicianDashboard />;
-      case 'patient':
-        return <PatientDashboard />;
-      default:
-        return <PatientDashboard />;
-    }
+  const mapUserRoleToLayoutRole = (role: UserRole): 'admin' | 'lab_tech' | 'patient' => {
+    if (role === 'technician') return 'lab_tech';
+    return role;
   };
 
   const renderCurrentPage = () => {
     if (!user) return null;
 
     switch (currentPage) {
-      case 'dashboard':
-        return (
-          <Layout userRole={user.role} userName={user.name} onNavigate={handleNavigation}>
-            {renderDashboard()}
-          </Layout>
-        );
       case 'appointments':
         return <Appointments userRole={user.role} userName={user.name} />;
       case 'testResults':
@@ -87,11 +73,7 @@ const Index = () => {
       case 'logout':
         return <Logout onLogout={handleLogout} />;
       default:
-        return (
-          <Layout userRole={user.role} userName={user.name} onNavigate={handleNavigation}>
-            {renderDashboard()}
-          </Layout>
-        );
+        return null;
     }
   };
 
@@ -99,17 +81,9 @@ const Index = () => {
     return (
       <AnimatePresence mode="wait">
         {authMode === 'login' ? (
-          <LoginPage
-            key="login"
-            onLogin={handleLogin}
-            onSwitchToRegister={() => setAuthMode('register')}
-          />
+          <LoginPage key="login" />
         ) : (
-          <RegisterPage
-            key="register"
-            onRegister={handleRegister}
-            onSwitchToLogin={() => setAuthMode('login')}
-          />
+          <RegisterPage key="register" />
         )}
       </AnimatePresence>
     );

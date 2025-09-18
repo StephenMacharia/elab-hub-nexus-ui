@@ -40,41 +40,12 @@ const Appointments = ({ userRole, userName }: AppointmentsProps) => {
   const [filter, setFilter] = useState('all');
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
+  const [appointments, setAppointments] = useState(() => {
+    const stored = localStorage.getItem('patient_appointments');
+    return stored ? JSON.parse(stored) : [];
+  });
 
   const form = useForm<BookingForm>();
-
-  const appointments = [
-    {
-      id: 1,
-      patient: userName,
-      test: 'Complete Blood Count',
-      date: '2024-12-18',
-      time: '9:00 AM',
-      location: 'Main Lab',
-      status: 'Confirmed',
-      technician: 'Dr. Sarah Wilson'
-    },
-    {
-      id: 2,
-      patient: userName,
-      test: 'Lipid Profile',
-      date: '2024-12-18',
-      time: '10:30 AM',
-      location: 'Cardiology Lab',
-      status: 'Pending',
-      technician: 'Dr. Michael Chen'
-    },
-    {
-      id: 3,
-      patient: userName,
-      test: 'Thyroid Function',
-      date: '2024-12-19',
-      time: '2:00 PM',
-      location: 'Endocrine Lab',
-      status: 'Confirmed',
-      technician: 'Dr. Lisa Park'
-    }
-  ];
 
   const availableTests = [
     'Complete Blood Count',
@@ -112,8 +83,20 @@ const Appointments = ({ userRole, userName }: AppointmentsProps) => {
   };
 
   const onSubmit = (data: BookingForm) => {
-    console.log('Booking submitted:', data);
-    // Here you would typically send the data to your backend
+    const newAppointment = {
+      id: Date.now(),
+      patient: userName,
+      test: data.testType,
+      date: data.date ? data.date.toISOString().split('T')[0] : '',
+      time: data.timeSlot,
+      location: data.location,
+      status: 'Pending',
+      technician: 'TBD',
+      notes: data.notes || ''
+    };
+    const updated = [...appointments, newAppointment];
+    setAppointments(updated);
+    localStorage.setItem('patient_appointments', JSON.stringify(updated));
     setShowBookingForm(false);
     form.reset();
   };

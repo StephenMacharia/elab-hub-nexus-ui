@@ -447,11 +447,7 @@ const PatientDashboard = () => {
                 ×
               </button>
               <div className="flex-1 overflow-hidden rounded-lg">
-                <ChatInterface
-                  recipientName={chatRecipient.name}
-                  recipientRole={chatRecipient.role}
-                  isOnline={true}
-                />
+                
               </div>
             </div>
           </div>
