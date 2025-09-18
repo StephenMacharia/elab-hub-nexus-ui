@@ -40,46 +40,47 @@ const Appointments = ({ userRole, userName }: AppointmentsProps) => {
   const [filter, setFilter] = useState('all');
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
-  // Dummy appointments for admin
-  const dummyAppointments = [
-    {
-      id: 1,
-      patient: 'John Doe',
-      test: 'Complete Blood Count',
-      date: '2025-09-20',
-      time: '9:00 AM',
-      location: 'Main Lab',
-      status: 'Confirmed',
-      technician: 'Jane Smith',
-      notes: 'Fasting required'
-    },
-    {
-      id: 2,
-      patient: 'Alice Johnson',
-      test: 'Lipid Profile',
-      date: '2025-09-21',
-      time: '10:30 AM',
-      location: 'Chemistry Lab',
-      status: 'Pending',
-      technician: 'Tom Brown',
-      notes: ''
-    },
-    {
-      id: 3,
-      patient: 'Bob Lee',
-      test: 'Thyroid Function Test',
-      date: '2025-09-22',
-      time: '2:00 PM',
-      location: 'Endocrine Lab',
-      status: 'Rescheduled',
-      technician: 'Sarah White',
-      notes: 'Patient requested afternoon slot'
-    }
-  ];
   const [appointments, setAppointments] = useState(() => {
-    if (userRole === 'admin') return dummyAppointments;
     const stored = localStorage.getItem('patient_appointments');
-    return stored ? JSON.parse(stored) : [];
+    if (stored) return JSON.parse(stored);
+    // Dummy appointments if none exist
+    const dummy = [
+      {
+        id: 1,
+        patient: userName,
+        test: 'Complete Blood Count',
+        date: '2025-09-20',
+        time: '9:00 AM',
+        location: 'Main Lab',
+        status: 'Confirmed',
+        technician: 'Dr. Smith',
+        notes: 'Fasting required'
+      },
+      {
+        id: 2,
+        patient: userName,
+        test: 'Lipid Profile',
+        date: '2025-09-25',
+        time: '10:30 AM',
+        location: 'Chemistry Lab',
+        status: 'Pending',
+        technician: 'Dr. Lee',
+        notes: ''
+      },
+      {
+        id: 3,
+        patient: userName,
+        test: 'Thyroid Function Test',
+        date: '2025-10-01',
+        time: '2:00 PM',
+        location: 'Endocrine Lab',
+        status: 'Rescheduled',
+        technician: 'Dr. Patel',
+        notes: 'Bring previous reports'
+      }
+    ];
+    localStorage.setItem('patient_appointments', JSON.stringify(dummy));
+    return dummy;
   });
 
   const form = useForm<BookingForm>();
