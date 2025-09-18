@@ -21,7 +21,8 @@ interface FileUploadProps {
 const AdminDashboard = () => {
   const [stats, setStats] = useState([]);
   const [recentUsers, setRecentUsers] = useState([]);
-  const [labCapacity, setLabCapacity] = useState([]);
+  // Remove labCapacity, add labResults
+  const [labResults, setLabResults] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -67,7 +68,13 @@ const AdminDashboard = () => {
 
         setStats(transformedStats);
         setRecentUsers(usersRes || []);
-        setLabCapacity(labsRes || []);
+        // Load lab results from localStorage
+        let results = [];
+        try {
+          const stored = localStorage.getItem("lab_results");
+          if (stored) results = JSON.parse(stored);
+        } catch {}
+        setLabResults(results);
         setAlerts(alertsRes || []);
       } catch (err) {
         handleApiError(err, 'Failed to load dashboard data');
@@ -218,7 +225,7 @@ const AdminDashboard = () => {
         </motion.div>
       </div>
 
-      {/* Recent Users and Lab Capacity */}
+      {/* Recent Users and Lab Results */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Users */}
         <motion.div
@@ -265,43 +272,41 @@ const AdminDashboard = () => {
           </div>
         </motion.div>
 
-        {/* Lab Capacity */}
+        {/* Lab Results (from TechnicianDashboard) */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.6 }}
           className="bg-white rounded-xl shadow-sm border p-6"
         >
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Lab Capacity</h3>
-          <div className="space-y-4">
-            {labCapacity.length > 0 ? (
-              labCapacity.map((lab) => (
-                <div key={lab.lab_id} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-gray-700">{lab.name}</span>
-                    <span className="text-sm text-gray-500">
-                      {lab.current}/{lab.max} ({lab.percentage}%)
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${lab.percentage}%` }}
-                      transition={{ duration: 0.8 }}
-                      className={`h-2.5 rounded-full ${
-                        lab.percentage > 85 ? 'bg-red-500' : 
-                        lab.percentage > 70 ? 'bg-yellow-500' : 'bg-green-500'
-                      }`}
-                    />
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <TestTube2 className="mx-auto h-10 w-10 text-gray-400" />
-                <p className="text-gray-500 mt-2">No lab capacity data available</p>
-              </div>
-            )}
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Labs</h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test Type</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Result</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {labResults && labResults.length > 0 ? (
+                  labResults.map((item, index) => (
+                    <tr key={index}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.patientName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.testType}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.result}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.time}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="text-center py-8 text-gray-500">No lab results available</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </motion.div>
       </div>

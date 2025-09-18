@@ -32,7 +32,8 @@ const Sidebar = ({ userRole, onClose }: SidebarProps) => {
   const adminMenuItems = [
     { icon: BarChart3, label: 'Dashboard', path: `${basePath}/dashboard` },
     { icon: Users, label: 'Users', path: `${basePath}/users` },
-    { icon: TestTube, label: 'Labs', path: `${basePath}/labs` },
+    // Redirect Labs to TechnicianDashboard Results tab
+    { icon: TestTube, label: 'Labs', path: `/technician/dashboard?tab=results` },
     { icon: Calendar, label: 'Appointments', path: `${basePath}/appointments` },
     { icon: FileText, label: 'Reports', path: `${basePath}/reports` },
     { icon: Settings, label: 'Settings', path: `${basePath}/settings` },
@@ -43,8 +44,8 @@ const Sidebar = ({ userRole, onClose }: SidebarProps) => {
     { icon: TestTube, label: 'Test Queue', path: `/technician/dashboard?tab=testqueue`},
     { icon: FileText, label: 'Results', path: `/technician/dashboard?tab=results`},
     { icon: MessageCircle, label: 'Messages', path: `/technician/dashboard?tab=messages`},
-    { icon: Calendar, label: 'Schedule', path: `/technician/dashboard?tab=shedule`},
-  {icon: Activity, label: 'Reports', path: '/technician/dashboard?tab=reports'},
+    { icon: Calendar, label: 'Schedule', path: `/technician/dashboard?tab=schedule`},
+    {icon: Activity, label: 'Reports', path: '/technician/dashboard?tab=reports'},
   ];
 
   const patientMenuItems = [

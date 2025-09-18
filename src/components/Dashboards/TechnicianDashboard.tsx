@@ -151,12 +151,21 @@ const TechnicianDashboard = () => {
     ];
   });
 
-  // Dummy data for results
-  const [results, setResults] = useState<ResultItem[]>([
-    { patientName: "John Doe", testType: "Blood Test", result: "Normal", time: "08:15 AM" },
-    { patientName: "Michael Johnson", testType: "Imaging", result: "No abnormalities", time: "09:30 AM" },
-    { patientName: "Sarah Wilson", testType: "ECG", result: "Regular rhythm", time: "10:45 AM" },
-  ]);
+  // Results state, persisted in localStorage
+  const [results, setResults] = useState<ResultItem[]>(() => {
+    const stored = localStorage.getItem("lab_results");
+    if (stored) return JSON.parse(stored);
+    return [
+      { patientName: "John Doe", testType: "Blood Test", result: "Normal", time: "08:15 AM" },
+      { patientName: "Michael Johnson", testType: "Imaging", result: "No abnormalities", time: "09:30 AM" },
+      { patientName: "Sarah Wilson", testType: "ECG", result: "Regular rhythm", time: "10:45 AM" },
+    ];
+  });
+
+  // Persist results to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem("lab_results", JSON.stringify(results));
+  }, [results]);
 
   useEffect(() => {
     const storedAppointments = localStorage.getItem("local_patient_appointments");
