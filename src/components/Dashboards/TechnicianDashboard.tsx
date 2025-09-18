@@ -1,6 +1,3 @@
-// ...imports and code...
-// ...after all state variables are defined (after line 201, before render functions)...
-
 import React, { useEffect, useState, useRef } from "react";
 // Removed duplicate Dialog import
 
@@ -11,7 +8,6 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useLocation, useNavigate, useNavigation } from "react-router-dom";
-
 
 // Patient type for modal
 interface Patient {
@@ -121,10 +117,6 @@ const TechnicianDashboard = () => {
   const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
-
-  // Search/filter state for results
-  const [resultsSearchTerm, setResultsSearchTerm] = useState("");
-  const [filteredResults, setFilteredResults] = useState<ResultItem[]>([]);
   const [searchDate, setSearchDate] = useState("");
   const [activeTab, setActiveTab] = useState("dashboard");
   const printRef = useRef<HTMLDivElement>(null);
@@ -151,28 +143,24 @@ const TechnicianDashboard = () => {
     const stored = localStorage.getItem("testQueue");
     if (stored) return JSON.parse(stored);
     return [
-      { id: 1, patientName: "John Doe", mrn: "123456", testType: "Blood Test", status: "Pending", time: "09:00 AM" },
+      { id: 1, patientName: "Mary Doe", mrn: "123456", testType: "Blood Test", status: "Pending", time: "09:00 AM" },
       { id: 2, patientName: "Jane Smith", mrn: "654321", testType: "Urine Test", status: "In Progress", time: "08:45 AM" },
       { id: 3, patientName: "Michael Johnson", mrn: "234567", testType: "Imaging", status: "Completed", time: "08:15 AM" },
       { id: 4, patientName: "Emily Brown", mrn: "345678", testType: "Biopsy", status: "Pending", time: "07:30 AM" },
     ];
   });
 
-  // Results state, persisted in localStorage
-  const [results, setResults] = useState<ResultItem[]>(() => {
-    const stored = localStorage.getItem("lab_results");
-    if (stored) return JSON.parse(stored);
-    return [
-      { patientName: "John Doe", testType: "Blood Test", result: "Normal", time: "08:15 AM" },
-      { patientName: "Michael Johnson", testType: "Imaging", result: "No abnormalities", time: "09:30 AM" },
-      { patientName: "Sarah Wilson", testType: "ECG", result: "Regular rhythm", time: "10:45 AM" },
-    ];
-  });
+  // Dummy data for results
+  const [results, setResults] = useState<ResultItem[]>([
+    { patientName: "John Doe", testType: "Blood Test", result: "Normal", time: "08:15 AM" },
+    { patientName: "Michael Johnson", testType: "Imaging", result: "No abnormalities", time: "09:30 AM" },
+    { patientName: "Sarah Wilson", testType: "ECG", result: "Regular rhythm", time: "10:45 AM" },
+  ]);
 
-  // Persist results to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem("lab_results", JSON.stringify(results));
-  }, [results]);
+  // State for result modal
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [resultForm, setResultForm] = useState<{ patientName: string; testType: string; id: number } | null>(null);
+  const [resultInput, setResultInput] = useState("");
 
   useEffect(() => {
     const storedAppointments = localStorage.getItem("local_patient_appointments");
@@ -215,55 +203,106 @@ const TechnicianDashboard = () => {
     toast.success(`Test status updated to ${status}`);
   };
 
-  // Export handlers for patient data
+  // Handler for clicking Complete: open modal
+  const handleCompleteClick = (item: TestQueueItem) => {
+    setResultForm({ patientName: item.patientName, testType: item.testType, id: item.id });
+    setResultInput("");
+    setShowResultModal(true);
+  };
+
+  // Handler for submitting result
+  const handleResultSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resultForm || !resultInput.trim()) return;
+    // Add to results
+    setResults(prev => [
+      ...prev,
+      {
+        patientName: resultForm.patientName,
+        testType: resultForm.testType,
+        result: resultInput,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ]);
+    // Mark test as completed
+    setTestQueue(prev => prev.map(item =>
+      item.id === resultForm.id ? { ...item, status: "Completed" } : item
+    ));
+    setShowResultModal(false);
+    setResultForm(null);
+    setResultInput("");
+    toast.success("Test result submitted and marked as completed!");
+  };
+
+  // Selected patient for results export
+  const [selectedResultPatient, setSelectedResultPatient] = useState<string | null>(null);
+
+  // Export handlers for results data
   const handleExportCSV = () => {
-    if (!patients.length) return toast.info("No patient data to export");
-    const header = "Name,DOB,Gender,MRN\n";
-    const rows = patients.map(p => `${p.name},${p.dob},${p.gender},${p.mrn}`).join("\n");
+    let exportResults = results;
+    if (selectedResultPatient) {
+      exportResults = results.filter(r => r.patientName === selectedResultPatient);
+      if (!exportResults.length) return toast.info("No results for selected patient");
+    } else if (!results.length) {
+      return toast.info("No results to export");
+    }
+    const header = "Patient Name,Test Type,Result,Time\n";
+    const rows = exportResults.map(r => `${r.patientName},${r.testType},${r.result},${r.time}`).join("\n");
     const csv = header + rows;
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "patients.csv";
+    a.download = selectedResultPatient ? `${selectedResultPatient}_results.csv` : "results.csv";
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const handleExportExcel = () => {
-    if (!patients.length) return toast.info("No patient data to export");
-    // Simple Excel XML format for basic export
-    const header = "<tr><th>Name</th><th>DOB</th><th>Gender</th><th>MRN</th></tr>";
-    const rows = patients.map(p => `<tr><td>${p.name}</td><td>${p.dob}</td><td>${p.gender}</td><td>${p.mrn}</td></tr>`).join("");
+    let exportResults = results;
+    if (selectedResultPatient) {
+      exportResults = results.filter(r => r.patientName === selectedResultPatient);
+      if (!exportResults.length) return toast.info("No results for selected patient");
+    } else if (!results.length) {
+      return toast.info("No results to export");
+    }
+    const header = "<tr><th>Patient Name</th><th>Test Type</th><th>Result</th><th>Time</th></tr>";
+    const rows = exportResults.map(r => `<tr><td>${r.patientName}</td><td>${r.testType}</td><td>${r.result}</td><td>${r.time}</td></tr>`).join("");
     const table = `<table>${header}${rows}</table>`;
     const html = `<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body>${table}</body></html>`;
     const blob = new Blob([html], { type: "application/vnd.ms-excel" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "patients.xls";
+    a.download = selectedResultPatient ? `${selectedResultPatient}_results.xls` : "results.xls";
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const handleExportPDF = () => {
-    if (!patients.length) return toast.info("No patient data to export");
+    let exportResults = results;
+    if (selectedResultPatient) {
+      exportResults = results.filter(r => r.patientName === selectedResultPatient);
+      if (!exportResults.length) return toast.info("No results for selected patient");
+    } else if (!results.length) {
+      return toast.info("No results to export");
+    }
     const doc = new jsPDF();
-    doc.text("Patient List", 10, 10);
+    doc.text(selectedResultPatient ? `Results for ${selectedResultPatient}` : "Test Results", 10, 10);
     let y = 20;
-    doc.text("Name", 10, y);
-    doc.text("DOB", 60, y);
-    doc.text("Gender", 110, y);
-    doc.text("MRN", 150, y);
+    doc.text("Patient Name", 10, y);
+    doc.text("Test Type", 60, y);
+    doc.text("Result", 110, y);
+    doc.text("Time", 150, y);
     y += 8;
-    patients.forEach((p) => {
-      doc.text(p.name, 10, y);
-      doc.text(p.dob, 60, y);
-      doc.text(p.gender, 110, y);
-      doc.text(p.mrn, 150, y);
+    exportResults.forEach((r) => {
+      doc.text(r.patientName, 10, y);
+      doc.text(r.testType, 60, y);
+      doc.text(r.result, 110, y);
+      doc.text(r.time, 150, y);
       y += 8;
     });
-    doc.save("patients.pdf");
+    doc.save(selectedResultPatient ? `${selectedResultPatient}_results.pdf` : "results.pdf");
   };
 
   const NavigationTabs = () => (
@@ -406,7 +445,7 @@ const TechnicianDashboard = () => {
                   )}
                   {item.status !== "Completed" && (
                     <button
-                      onClick={() => updateTestStatus(item.id, "Completed")}
+                      onClick={() => handleCompleteClick(item)}
                       className="text-green-600 hover:text-green-900"
                     >
                       Complete
@@ -418,35 +457,53 @@ const TechnicianDashboard = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Result Modal */}
+      {showResultModal && resultForm && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={() => setShowResultModal(false)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none"
+            >
+              ×
+            </button>
+            <h2 className="text-xl font-bold mb-4">Enter Test Result</h2>
+            <form onSubmit={handleResultSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium">Patient Name</label>
+                <input value={resultForm.patientName} disabled className="mt-1 p-2 border rounded w-full bg-gray-100" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Test Type</label>
+                <input value={resultForm.testType} disabled className="mt-1 p-2 border rounded w-full bg-gray-100" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Result</label>
+                <textarea
+                  value={resultInput}
+                  onChange={e => setResultInput(e.target.value)}
+                  className="mt-1 p-2 border rounded w-full"
+                  rows={3}
+                  required
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button type="button" onClick={() => setShowResultModal(false)} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded">Submit</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 
   const renderResults = () => (
     <div className="bg-white rounded-xl shadow-sm border p-6">
       <h3 className="text-lg font-semibold mb-4">Results</h3>
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <div className="flex gap-2 items-center">
-          <input
-            type="text"
-            placeholder="Search by name or MRN..."
-            value={resultsSearchTerm}
-            onChange={e => setResultsSearchTerm(e.target.value)}
-            className="border rounded px-3 py-2 text-sm"
-          />
-          <button
-            className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            onClick={() => setResultsSearchTerm(resultsSearchTerm)}
-          >
-            Search
-          </button>
-          <button
-            className="px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-            onClick={() => setResultsSearchTerm("")}
-          >
-            Clear
-          </button>
-        </div>
-      </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -455,23 +512,26 @@ const TechnicianDashboard = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test Type</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Result</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Select</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredResults.length > 0 ? (
-              filteredResults.map((item, index) => (
-                <tr key={index}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.patientName}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.testType}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.result}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.time}</td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={4} className="text-center py-8 text-gray-500">No results available</td>
+            {results.map((item, index) => (
+              <tr key={index} className={selectedResultPatient === item.patientName ? "bg-blue-50" : ""}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.patientName}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.testType}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.result}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.time}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <button
+                    className={`px-3 py-1 rounded ${selectedResultPatient === item.patientName ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-blue-100"}`}
+                    onClick={() => setSelectedResultPatient(selectedResultPatient === item.patientName ? null : item.patientName)}
+                  >
+                    {selectedResultPatient === item.patientName ? "Selected" : "Select"}
+                  </button>
+                </td>
               </tr>
-            )}
+            ))}
           </tbody>
         </table>
       </div>
@@ -488,6 +548,9 @@ const TechnicianDashboard = () => {
           <FileText className="w-4 h-4" />
           CSV
         </button>
+        {selectedResultPatient && (
+          <button onClick={() => setSelectedResultPatient(null)} className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 ml-2">Clear Selection</button>
+        )}
       </div>
     </div>
   );
@@ -518,14 +581,14 @@ const TechnicianDashboard = () => {
 
     // Add to test queue and persist
     setTestQueue(prev => {
-      const newQueue: TestQueueItem[] = [
+      const newQueue = [
         ...prev,
         {
           id: prev.length > 0 ? Math.max(...prev.map(q => q.id)) + 1 : 1,
           patientName: patient.name,
           mrn: patient.mrn,
           testType: patient.testType,
-          status: "Pending" as "Pending",
+          status: "Pending",
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ];
