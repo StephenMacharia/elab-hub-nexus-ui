@@ -1,6 +1,6 @@
 
 import React from 'react';
-import '@/pages/chartjs-setup';
+import './chartjs-setup';
 import { Bar, Pie, Line } from 'react-chartjs-2';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
