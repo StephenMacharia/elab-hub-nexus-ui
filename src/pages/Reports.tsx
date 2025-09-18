@@ -22,7 +22,7 @@ const pieData = {
   labels: ['Blood', 'Urine', 'Imaging', 'Biopsy'],
   datasets: [
     {
-      data: [300, 50, 100, 40],
+      data: [150, 50, 90, 40],
       backgroundColor: ['#6366f1', '#f59e42', '#10b981', '#f43f5e'],
       hoverBackgroundColor: ['#818cf8', '#fbbf24', '#34d399', '#fb7185'],
     },
