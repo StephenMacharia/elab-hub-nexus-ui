@@ -154,10 +154,10 @@ const TestResults = ({ userRole, userName }: TestResultsProps) => {
                       <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
                         <FileText className="h-6 w-6 text-blue-600" />
                       </div>
-                      {/* <div>
+                      <div>
                         <h4 className="font-medium text-gray-900">{result.testName}</h4>
-                        <p className="text-sm text-gray-600">{result.patient}</p>
-                      </div> */}
+                        {/* <p className="text-sm text-gray-600">{result.patient}</p> */}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`px-2 py-1 text-xs rounded-full ${getCategoryColor(result.category)}`}>
