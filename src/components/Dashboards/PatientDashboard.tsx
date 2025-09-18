@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ChatInterface from "../Chat/ChatInterface";
 import { motion } from "framer-motion";
 import {
@@ -182,6 +183,7 @@ const PatientDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const navigate = useNavigate();
   // Dummy chat recipient for patient
   const chatRecipient = {
     name: "Dr. Sarah Wilson",
@@ -359,9 +361,17 @@ const PatientDashboard = () => {
           animate={{ x: 0, opacity: 1 }}
           className="bg-white rounded-xl shadow-sm border p-6"
         >
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Calendar className="h-5 w-5" /> Upcoming Appointments
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Calendar className="h-5 w-5" /> Upcoming Appointments
+            </h3>
+            <button
+              className="text-blue-600 hover:underline text-sm font-medium"
+              onClick={() => navigate('/patient/appointments')}
+            >
+              View All
+            </button>
+          </div>
           {appointments.length === 0 && (
             <p className="text-gray-500">No upcoming appointments.</p>
           )}

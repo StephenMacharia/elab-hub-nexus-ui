@@ -94,10 +94,10 @@ const Sidebar = ({ userRole, onClose }: SidebarProps) => {
       return location.pathname.includes('/technician/dashboard') && currentTab === itemTab;
     }
     if (userRole === 'admin') {
-      return location.pathname === '/admin/dashboard';
+      return location.pathname === itemPath;
     }
     if (userRole === 'patient') {
-      return location.pathname === '/patient/dashboard';
+      return location.pathname === itemPath;
     }
     return location.pathname === itemPath;
   };
