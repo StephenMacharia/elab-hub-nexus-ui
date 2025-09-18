@@ -1,5 +1,6 @@
-import '@/pages/chartjs-setup';
+
 import React from 'react';
+import '@/pages/chartjs-setup';
 import { Bar, Pie, Line } from 'react-chartjs-2';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
@@ -29,7 +30,6 @@ const pieData = {
   ],
 };
 
-
 const lineData = {
   labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
   datasets: [
@@ -53,42 +53,48 @@ const chartOptions = {
   },
 };
 
-const ReportsPage = () => (
-  <div className="p-4 space-y-6">
-    <Card>
-      <CardHeader>
-        <CardTitle>Tests Performed (Monthly)</CardTitle>
-        <p className="text-xs text-gray-500 mt-1">Shows the number of tests performed each month. A steady increase indicates growing lab activity and patient engagement.</p>
-      </CardHeader>
-      <CardContent>
-        <div style={{ height: 220 }}>
-          <Bar data={barData} options={chartOptions} />
-        </div>
-      </CardContent>
-    </Card>
-    <Card>
-      <CardHeader>
-        <CardTitle>Test Types Distribution</CardTitle>
-        <p className="text-xs text-gray-500 mt-1">Breakdown of test types. Blood tests are most common, reflecting routine checkups and diagnostics.</p>
-      </CardHeader>
-      <CardContent>
-        <div style={{ height: 220 }}>
-          <Pie data={pieData} options={chartOptions} />
-        </div>
-      </CardContent>
-    </Card>
-    <Card>
-      <CardHeader>
-        <CardTitle>Average Turnaround Time</CardTitle>
-        <p className="text-xs text-gray-500 mt-1">Shows the average time (in hours) to deliver results. The downward trend suggests improved lab efficiency.</p>
-      </CardHeader>
-      <CardContent>
-        <div style={{ height: 220 }}>
-          <Line data={lineData} options={chartOptions} />
-        </div>
-      </CardContent>
-    </Card>
-  </div>
-);
-
-export default ReportsPage;
+export default function ReportsPage() {
+  return (
+    <div className="p-4 space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Tests Performed (Monthly)</CardTitle>
+          <p className="text-xs text-gray-500 mt-1">
+            Shows the number of tests performed each month. A steady increase indicates growing lab activity and patient engagement.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div style={{ height: 220 }}>
+            <Bar data={barData} options={chartOptions} />
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Test Types Distribution</CardTitle>
+          <p className="text-xs text-gray-500 mt-1">
+            Breakdown of test types. Blood tests are most common, reflecting routine checkups and diagnostics.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div style={{ height: 220 }}>
+            <Pie data={pieData} options={chartOptions} />
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Average Turnaround Time</CardTitle>
+          <p className="text-xs text-gray-500 mt-1">
+            Shows the average time (in hours) to deliver results. The downward trend suggests improved lab efficiency.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div style={{ height: 220 }}>
+            <Line data={lineData} options={chartOptions} />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
