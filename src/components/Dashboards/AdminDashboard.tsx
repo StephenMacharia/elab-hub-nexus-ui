@@ -411,30 +411,6 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
-          <div className="mb-4">
-            <button
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-              disabled={selectedResults.length === 0}
-              onClick={() => {
-                // Download selected results as CSV
-                const header = "Patient Name,Test Type,Result,Time\n";
-                const rows = filteredLabResults
-                  .filter((_, idx) => selectedResults.includes(idx))
-                  .map(item => `${item.patientName},${item.testType},${item.result},${item.time}`)
-                  .join("\n");
-                const csv = header + rows;
-                const blob = new Blob([csv], { type: "text/csv" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = "selected_lab_results.csv";
-                a.click();
-                URL.revokeObjectURL(url);
-              }}
-            >
-              Download Selected Results
-            </button>
-          </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -501,6 +477,30 @@ const AdminDashboard = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+          <div className="mb-4">
+            <button
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              disabled={selectedResults.length === 0}
+              onClick={() => {
+                // Download selected results as CSV
+                const header = "Patient Name,Test Type,Result,Time\n";
+                const rows = filteredLabResults
+                  .filter((_, idx) => selectedResults.includes(idx))
+                  .map(item => `${item.patientName},${item.testType},${item.result},${item.time}`)
+                  .join("\n");
+                const csv = header + rows;
+                const blob = new Blob([csv], { type: "text/csv" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "selected_lab_results.csv";
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              Download Selected Results
+            </button>
           </div>
         </motion.div>
       </div>
