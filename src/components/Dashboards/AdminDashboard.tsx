@@ -416,38 +416,7 @@ const AdminDashboard = () => {
               </div>
             </div>
             </div>
-            {/* Lab Tests Table */}
-            <div className="mb-6">
-            <h4 className="text-md font-semibold text-gray-900 mb-2">Lab Tests</h4>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Counts</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lab Name</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">CBC</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Main Lab</td>
-                </tr>
-                <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Lipid Panel</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Chemistry Lab</td>
-                </tr>
-                <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Blood Sugar</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Endocrine Lab</td>
-                </tr>
-              </tbody>
-              </table>
-            </div>
-            </div>
+            
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -539,6 +508,38 @@ const AdminDashboard = () => {
               Download Selected Results
             </button>
           </div>
+          {/* Lab Tests Table */}
+            <div className="mb-6">
+            <h4 className="text-md font-semibold text-gray-900 mb-2">Lab Tests</h4>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Counts</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lab Name</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">CBC</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">20</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Main Lab</td>
+                </tr>
+                <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Lipid Panel</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">15</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Chemistry Lab</td>
+                </tr>
+                <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Blood Sugar</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">10</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Endocrine Lab</td>
+                </tr>
+              </tbody>
+              </table>
+            </div>
+            </div>
         </motion.div>
       </div>
 
