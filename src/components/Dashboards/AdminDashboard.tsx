@@ -439,7 +439,7 @@ const AdminDashboard = () => {
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:items-center">
               <input
                 type="text"
-                placeholder="Search by name or MRN..."
+                placeholder="Search by name or MRN or Lab name..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 className="border rounded px-3 py-2 text-sm flex-1 min-w-0"
