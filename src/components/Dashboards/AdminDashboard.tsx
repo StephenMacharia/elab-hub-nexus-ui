@@ -362,70 +362,7 @@ const AdminDashboard = () => {
           </div>
         </motion.div>
 
-        {/* Appointments Table */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.6 }}
-          className="bg-white rounded-xl shadow-sm border p-6"
-        >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Appointments</h3>
-            <div className="flex gap-2 items-center">
-              <input
-                type="text"
-                placeholder="Search by patient or status..."
-                value={appointmentsSearch}
-                onChange={e => setAppointmentsSearch(e.target.value)}
-                className="border rounded px-3 py-2 text-sm"
-              />
-              <button
-                className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                onClick={() => setAppointmentsSearch(appointmentsSearch)}
-              >
-                Search
-              </button>
-              <button
-                className="px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-                onClick={() => setAppointmentsSearch("")}
-              >
-                Clear
-              </button>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredAppointments && filteredAppointments.length > 0 ? (
-                  filteredAppointments.map((a, idx) => (
-                    <tr key={a.appointment_id || idx}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{a.patient_name || a.patientName || "-"}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{a.test_name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{a.appointment_date}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{a.appointment_time}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{a.location}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{a.status}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="text-center py-8 text-gray-500">No appointments found</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </motion.div>
+        {/* Appointments Table removed. Appointments now only show when the sidebar button is clicked. */}
 
         {/* Lab Results (from TechnicianDashboard) - with checkboxes, download, reports, and search */}
         <motion.div
