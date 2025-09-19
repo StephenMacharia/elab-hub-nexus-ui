@@ -375,47 +375,79 @@ const AdminDashboard = () => {
           transition={{ delay: 0.6 }}
           className="bg-white rounded-xl shadow-sm border p-6"
         >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Labs</h3>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:items-center">
               <input
-                type="text"
-                placeholder="Search by patient, MRN, lab name, test type, or result..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="border rounded px-3 py-2 text-sm flex-1 min-w-0"
-                style={{ maxWidth: '260px' }}
+              type="text"
+              placeholder="Search by patient, MRN, lab name, test type, or result..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="border rounded px-3 py-2 text-sm flex-1 min-w-0"
+              style={{ maxWidth: '260px' }}
               />
               <div className="flex gap-2 w-full sm:w-auto">
-                <button
-                  className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full sm:w-auto"
-                  onClick={e => {
-                  e.preventDefault();
-                  // Explicitly trigger filtering by updating filteredLabResults
-                  const lower = searchTerm.toLowerCase();
-                  setFilteredLabResults(
-                    labResults.filter(
-                    (item) =>
-                      (item.patientName && item.patientName.toLowerCase().includes(lower)) ||
-                      (item.mrn && item.mrn.toLowerCase().includes(lower)) ||
-                      (item.labName && item.labName.toLowerCase().includes(lower)) ||
-                      (item.testType && item.testType.toLowerCase().includes(lower)) ||
-                      (item.result && item.result.toLowerCase().includes(lower))
-                    )
-                  );
-                  }}
-                >
-                  Search
-                </button>
-                <button
-                  className="px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 w-full sm:w-auto"
-                  onClick={e => { e.preventDefault(); setSearchTerm(""); }}
-                >
-                  Clear
-                </button>
+              <button
+                className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full sm:w-auto"
+                onClick={e => {
+                e.preventDefault();
+                // Explicitly trigger filtering by updating filteredLabResults
+                const lower = searchTerm.toLowerCase();
+                setFilteredLabResults(
+                labResults.filter(
+                (item) =>
+                  (item.patientName && item.patientName.toLowerCase().includes(lower)) ||
+                  (item.mrn && item.mrn.toLowerCase().includes(lower)) ||
+                  (item.labName && item.labName.toLowerCase().includes(lower)) ||
+                  (item.testType && item.testType.toLowerCase().includes(lower)) ||
+                  (item.result && item.result.toLowerCase().includes(lower))
+                )
+                );
+                }}
+              >
+                Search
+              </button>
+              <button
+                className="px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 w-full sm:w-auto"
+                onClick={e => { e.preventDefault(); setSearchTerm(""); }}
+              >
+                Clear
+              </button>
               </div>
             </div>
-          </div>
+            </div>
+            {/* Lab Tests Table */}
+            <div className="mb-6">
+            <h4 className="text-md font-semibold text-gray-900 mb-2">Lab Tests</h4>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Counts</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lab Name</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">CBC</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Main Lab</td>
+                </tr>
+                <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Lipid Panel</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Chemistry Lab</td>
+                </tr>
+                <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Blood Sugar</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Endocrine Lab</td>
+                </tr>
+              </tbody>
+              </table>
+            </div>
+            </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
