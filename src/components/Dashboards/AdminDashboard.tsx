@@ -389,7 +389,21 @@ const AdminDashboard = () => {
               <div className="flex gap-2 w-full sm:w-auto">
                 <button
                   className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full sm:w-auto"
-                  onClick={e => { e.preventDefault(); setSearchTerm(searchTerm); }}
+                  onClick={e => {
+                  e.preventDefault();
+                  // Explicitly trigger filtering by updating filteredLabResults
+                  const lower = searchTerm.toLowerCase();
+                  setFilteredLabResults(
+                    labResults.filter(
+                    (item) =>
+                      (item.patientName && item.patientName.toLowerCase().includes(lower)) ||
+                      (item.mrn && item.mrn.toLowerCase().includes(lower)) ||
+                      (item.labName && item.labName.toLowerCase().includes(lower)) ||
+                      (item.testType && item.testType.toLowerCase().includes(lower)) ||
+                      (item.result && item.result.toLowerCase().includes(lower))
+                    )
+                  );
+                  }}
                 >
                   Search
                 </button>
