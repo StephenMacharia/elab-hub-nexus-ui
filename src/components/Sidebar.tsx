@@ -10,6 +10,7 @@ import {
   LogOut,
   X,
   FileText,
+  Activity,
   User,
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -29,24 +30,26 @@ const Sidebar = ({ userRole, onClose }: SidebarProps) => {
   const basePath = `/${userRole}`;
 
   const adminMenuItems = [
-    { icon: BarChart3, label: 'Dashboard', path: `${basePath}/dashboard` },
+    { icon: BarChart3, label: 'Dashboard', path: '/admin/dashboard' },
     { icon: Users, label: 'Users', path: `${basePath}/users` },
-    { icon: TestTube, label: 'Labs', path: `${basePath}/labs` },
+    // Redirect Labs to TechnicianDashboard Results tab
+    { icon: TestTube, label: 'Labs', path: `/technician/dashboard?tab=results` },
     { icon: Calendar, label: 'Appointments', path: `${basePath}/appointments` },
     { icon: FileText, label: 'Reports', path: `${basePath}/reports` },
     { icon: Settings, label: 'Settings', path: `${basePath}/settings` },
   ];
 
   const technicianMenuItems = [
-    { icon: BarChart3, label: 'Dashboard', path: `${basePath}/technician/dashboard` },
-    { icon: TestTube, label: 'Test Queue', path: `${basePath}/technician/dashboard` },
-    { icon: FileText, label: 'Results', path: `${basePath}/technician/dashboard` },
-    { icon: MessageCircle, label: 'Messages', path: `${basePath}/technician/dashboard` },
-    { icon: Calendar, label: 'Schedule', path: `${basePath}/technician/dashboard` },
+    { icon: BarChart3, label: 'Dashboard', path: '/technician/dashboard?tab=dashboard'},
+    { icon: TestTube, label: 'Test Queue', path: `/technician/dashboard?tab=testqueue`},
+    { icon: FileText, label: 'Results', path: `/technician/dashboard?tab=results`},
+    { icon: MessageCircle, label: 'Messages', path: `/technician/dashboard?tab=messages`},
+    { icon: Calendar, label: 'Schedule', path: `/technician/dashboard?tab=schedule`},
+    {icon: Activity, label: 'Reports', path: '/technician/dashboard?tab=reports'},
   ];
 
   const patientMenuItems = [
-    { icon: BarChart3, label: 'Dashboard', path: `${basePath}/dashboard` },
+    { icon: BarChart3, label: 'Dashboard', path: '/patient/dashboard' },
     { icon: Calendar, label: 'Appointments', path: `${basePath}/appointments` },
     { icon: FileText, label: 'Test Results', path: `${basePath}/test-results` },
     { icon: MessageCircle, label: 'Chat', path: `${basePath}/chat` },
@@ -83,6 +86,22 @@ const Sidebar = ({ userRole, onClose }: SidebarProps) => {
     }
   };
 
+  const isMenuItemActive = (itemPath: string) => {
+    if (userRole === 'lab_tech') {
+      const urlParams = new URLSearchParams(location.search);
+      const currentTab = urlParams.get('tab') || 'dashboard';
+      const itemTab = new URLSearchParams(itemPath.split('?')[1] || '').get('tab') || 'dashboard';
+      return location.pathname.includes('/technician/dashboard') && currentTab === itemTab;
+    }
+    if (userRole === 'admin') {
+      return location.pathname === itemPath;
+    }
+    if (userRole === 'patient') {
+      return location.pathname === itemPath;
+    }
+    return location.pathname === itemPath;
+  };
+
   return (
     <motion.div
       initial={{ x: -300 }}
@@ -116,7 +135,7 @@ const Sidebar = ({ userRole, onClose }: SidebarProps) => {
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
           {menuItems.map((item, index) => {
-            const isActive = location.pathname === item.path;
+            const isActive = isMenuItemActive(item.path);
             return (
               <motion.li
                 key={item.label}

@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import ChatInterface from "../Chat/ChatInterface";
 import { motion } from "framer-motion";
 import {
   Calendar, FileText, MessageCircle, CheckCircle,
@@ -180,6 +182,13 @@ const PatientDashboard = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const navigate = useNavigate();
+  // Dummy chat recipient for patient
+  const chatRecipient = {
+    name: "Dr. Sarah Wilson",
+    role: "Lab Technician"
+  };
 
   const handleAddAppointment = async (data: {
     test_name: string;
@@ -352,9 +361,17 @@ const PatientDashboard = () => {
           animate={{ x: 0, opacity: 1 }}
           className="bg-white rounded-xl shadow-sm border p-6"
         >
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Calendar className="h-5 w-5" /> Upcoming Appointments
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Calendar className="h-5 w-5" /> Upcoming Appointments
+            </h3>
+            <button
+              className="text-blue-600 hover:underline text-sm font-medium"
+              onClick={() => navigate('/patient/appointments')}
+            >
+              View All
+            </button>
+          </div>
           {appointments.length === 0 && (
             <p className="text-gray-500">No upcoming appointments.</p>
           )}
@@ -405,6 +422,13 @@ const PatientDashboard = () => {
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <MessageCircle className="h-5 w-5" /> Messages
         </h3>
+        <div
+          className="cursor-pointer p-4 mb-3 border rounded-lg bg-blue-50 border-blue-200 hover:bg-blue-100 transition"
+          onClick={() => setShowChat(true)}
+        >
+          <div className="font-medium">Chat with {chatRecipient.name}</div>
+          <p className="text-sm text-gray-600">Click to view your conversation with your doctor.</p>
+        </div>
         {messages.length === 0 && <p className="text-gray-500">No messages.</p>}
         {messages.map((m) => (
           <div
@@ -420,6 +444,24 @@ const PatientDashboard = () => {
             </span>
           </div>
         ))}
+        {/* Chat Modal */}
+        {showChat && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+            <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl relative flex flex-col h-[80vh]">
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => setShowChat(false)}
+                className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none z-10"
+              >
+                ×
+              </button>
+              <div className="flex-1 overflow-hidden rounded-lg">
+                
+              </div>
+            </div>
+          </div>
+        )}
       </motion.div>
     </div>
   );

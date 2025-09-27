@@ -1,9 +1,78 @@
 import React, { useEffect, useState, useRef } from "react";
+// Removed duplicate Dialog import
+
 import { motion } from "framer-motion";
-import { Calendar, CheckCircle, Printer, MessageSquare, Clock, FileText } from "lucide-react";
+import { Calendar, CheckCircle, Printer, MessageSquare, Clock, FileText, User } from "lucide-react";
+import jsPDF from "jspdf";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "../ui/dialog";
 import { toast, ToastContainer } from "react-toastify";
-import html2pdf from "html2pdf.js";
 import "react-toastify/dist/ReactToastify.css";
+import { useLocation, useNavigate, useNavigation } from "react-router-dom";
+
+// Patient type for modal
+interface Patient {
+  name: string;
+  dob: string;
+  gender: string;
+  mrn: string;
+  testType: string;
+}
+
+// AddPatientForm component
+function AddPatientForm({ onSubmit, onCancel }: { onSubmit: (p: Patient) => void; onCancel: () => void }) {
+  const [form, setForm] = useState<Patient>({ name: "", dob: "", gender: "", mrn: "", testType: "" });
+  const [error, setError] = useState("");
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name || !form.dob || !form.gender || !form.mrn || !form.testType) {
+      setError("All fields are required.");
+      return;
+    }
+    setError("");
+    onSubmit(form);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium">Name</label>
+        <input name="name" value={form.name} onChange={handleChange} className="mt-1 p-2 border rounded w-full" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium">DOB</label>
+        <input name="dob" type="date" value={form.dob} onChange={handleChange} className="mt-1 p-2 border rounded w-full" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium">Gender</label>
+        <select name="gender" value={form.gender} onChange={handleChange} className="mt-1 p-2 border rounded w-full">
+          <option value="">Select</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div>
+        <label className="block text-sm font-medium">MRN</label>
+        <input name="mrn" value={form.mrn} onChange={handleChange} className="mt-1 p-2 border rounded w-full" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium">Test Type</label>
+        <input name="testType" value={form.testType} onChange={handleChange} className="mt-1 p-2 border rounded w-full" />
+      </div>
+      {error && <div className="text-red-600 text-sm">{error}</div>}
+      <div className="flex gap-2 justify-end">
+        <button type="button" onClick={onCancel} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
+        <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded">Add</button>
+      </div>
+    </form>
+  );
+}
+
 
 interface Appointment {
   appointment_id: number;
@@ -36,7 +105,14 @@ const syncAppointmentsToBackend = async (appointments: Appointment[]) => {
   return new Promise((resolve) => setTimeout(resolve, 500));
 };
 
+const PATIENTS_KEY = "lab_patients";
+
 const TechnicianDashboard = () => {
+  const [showAddPatient, setShowAddPatient] = useState(false);
+  const [patients, setPatients] = useState<Patient[]>(() => {
+    const stored = localStorage.getItem("patients");
+    return stored ? JSON.parse(stored) : [];
+  });
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,14 +120,35 @@ const TechnicianDashboard = () => {
   const [searchDate, setSearchDate] = useState("");
   const [activeTab, setActiveTab] = useState("dashboard");
   const printRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const tab = urlParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [location.search]);
+
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    const currentPath = location.pathname;
+    navigate(`${currentPath}?tab=${tabId}`, { replace: true });
+  };
 
   // Dummy data for test queue
-  const [testQueue, setTestQueue] = useState<TestQueueItem[]>([
-    { id: 1, patientName: "John Doe", mrn: "123456", testType: "Blood Test", status: "Pending", time: "09:00 AM" },
-    { id: 2, patientName: "Jane Smith", mrn: "654321", testType: "Urine Test", status: "In Progress", time: "08:45 AM" },
-    { id: 3, patientName: "Michael Johnson", mrn: "234567", testType: "Imaging", status: "Completed", time: "08:15 AM" },
-    { id: 4, patientName: "Emily Brown", mrn: "345678", testType: "Biopsy", status: "Pending", time: "07:30 AM" },
-  ]);
+  const [testQueue, setTestQueue] = useState<TestQueueItem[]>(() => {
+    const stored = localStorage.getItem("testQueue");
+    if (stored) return JSON.parse(stored);
+    return [
+      { id: 1, patientName: "Mary Doe", mrn: "123456", testType: "Blood Test", status: "Pending", time: "09:00 AM" },
+      { id: 2, patientName: "Jane Smith", mrn: "654321", testType: "Urine Test", status: "In Progress", time: "08:45 AM" },
+      { id: 3, patientName: "Michael Johnson", mrn: "234567", testType: "Imaging", status: "Completed", time: "08:15 AM" },
+      { id: 4, patientName: "Emily Brown", mrn: "345678", testType: "Biopsy", status: "Pending", time: "07:30 AM" },
+    ];
+  });
 
   // Dummy data for results
   const [results, setResults] = useState<ResultItem[]>([
@@ -59,6 +156,11 @@ const TechnicianDashboard = () => {
     { patientName: "Michael Johnson", testType: "Imaging", result: "No abnormalities", time: "09:30 AM" },
     { patientName: "Sarah Wilson", testType: "ECG", result: "Regular rhythm", time: "10:45 AM" },
   ]);
+
+  // State for result modal
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [resultForm, setResultForm] = useState<{ patientName: string; testType: string; id: number } | null>(null);
+  const [resultInput, setResultInput] = useState("");
 
   useEffect(() => {
     const storedAppointments = localStorage.getItem("local_patient_appointments");
@@ -94,25 +196,113 @@ const TechnicianDashboard = () => {
     toast.success("Appointment marked as completed!");
   };
 
-  const handleExportPDF = () => {
-    if (printRef.current) {
-      html2pdf()
-        .set({
-          margin: 0.5,
-          filename: "appointments.pdf",
-          html2canvas: { scale: 2 },
-          jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
-        })
-        .from(printRef.current)
-        .save();
-    }
-  };
-
   const updateTestStatus = (id: number, status: "Pending" | "In Progress" | "Completed") => {
     setTestQueue(testQueue.map(item => 
       item.id === id ? { ...item, status } : item
     ));
     toast.success(`Test status updated to ${status}`);
+  };
+
+  // Handler for clicking Complete: open modal
+  const handleCompleteClick = (item: TestQueueItem) => {
+    setResultForm({ patientName: item.patientName, testType: item.testType, id: item.id });
+    setResultInput("");
+    setShowResultModal(true);
+  };
+
+  // Handler for submitting result
+  const handleResultSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resultForm || !resultInput.trim()) return;
+    // Add to results
+    setResults(prev => [
+      ...prev,
+      {
+        patientName: resultForm.patientName,
+        testType: resultForm.testType,
+        result: resultInput,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ]);
+    // Mark test as completed
+    setTestQueue(prev => prev.map(item =>
+      item.id === resultForm.id ? { ...item, status: "Completed" } : item
+    ));
+    setShowResultModal(false);
+    setResultForm(null);
+    setResultInput("");
+    toast.success("Test result submitted and marked as completed!");
+  };
+
+  // Selected patient for results export
+  const [selectedResultPatient, setSelectedResultPatient] = useState<string | null>(null);
+
+  // Export handlers for results data
+  const handleExportCSV = () => {
+    let exportResults = results;
+    if (selectedResultPatient) {
+      exportResults = results.filter(r => r.patientName === selectedResultPatient);
+      if (!exportResults.length) return toast.info("No results for selected patient");
+    } else if (!results.length) {
+      return toast.info("No results to export");
+    }
+    const header = "Patient Name,Test Type,Result,Time\n";
+    const rows = exportResults.map(r => `${r.patientName},${r.testType},${r.result},${r.time}`).join("\n");
+    const csv = header + rows;
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = selectedResultPatient ? `${selectedResultPatient}_results.csv` : "results.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportExcel = () => {
+    let exportResults = results;
+    if (selectedResultPatient) {
+      exportResults = results.filter(r => r.patientName === selectedResultPatient);
+      if (!exportResults.length) return toast.info("No results for selected patient");
+    } else if (!results.length) {
+      return toast.info("No results to export");
+    }
+    const header = "<tr><th>Patient Name</th><th>Test Type</th><th>Result</th><th>Time</th></tr>";
+    const rows = exportResults.map(r => `<tr><td>${r.patientName}</td><td>${r.testType}</td><td>${r.result}</td><td>${r.time}</td></tr>`).join("");
+    const table = `<table>${header}${rows}</table>`;
+    const html = `<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body>${table}</body></html>`;
+    const blob = new Blob([html], { type: "application/vnd.ms-excel" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = selectedResultPatient ? `${selectedResultPatient}_results.xls` : "results.xls";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportPDF = () => {
+    let exportResults = results;
+    if (selectedResultPatient) {
+      exportResults = results.filter(r => r.patientName === selectedResultPatient);
+      if (!exportResults.length) return toast.info("No results for selected patient");
+    } else if (!results.length) {
+      return toast.info("No results to export");
+    }
+    const doc = new jsPDF();
+    doc.text(selectedResultPatient ? `Results for ${selectedResultPatient}` : "Test Results", 10, 10);
+    let y = 20;
+    doc.text("Patient Name", 10, y);
+    doc.text("Test Type", 60, y);
+    doc.text("Result", 110, y);
+    doc.text("Time", 150, y);
+    y += 8;
+    exportResults.forEach((r) => {
+      doc.text(r.patientName, 10, y);
+      doc.text(r.testType, 60, y);
+      doc.text(r.result, 110, y);
+      doc.text(r.time, 150, y);
+      y += 8;
+    });
+    doc.save(selectedResultPatient ? `${selectedResultPatient}_results.pdf` : "results.pdf");
   };
 
   const NavigationTabs = () => (
@@ -255,7 +445,7 @@ const TechnicianDashboard = () => {
                   )}
                   {item.status !== "Completed" && (
                     <button
-                      onClick={() => updateTestStatus(item.id, "Completed")}
+                      onClick={() => handleCompleteClick(item)}
                       className="text-green-600 hover:text-green-900"
                     >
                       Complete
@@ -267,6 +457,47 @@ const TechnicianDashboard = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Result Modal */}
+      {showResultModal && resultForm && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={() => setShowResultModal(false)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none"
+            >
+              ×
+            </button>
+            <h2 className="text-xl font-bold mb-4">Enter Test Result</h2>
+            <form onSubmit={handleResultSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium">Patient Name</label>
+                <input value={resultForm.patientName} disabled className="mt-1 p-2 border rounded w-full bg-gray-100" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Test Type</label>
+                <input value={resultForm.testType} disabled className="mt-1 p-2 border rounded w-full bg-gray-100" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Result</label>
+                <textarea
+                  value={resultInput}
+                  onChange={e => setResultInput(e.target.value)}
+                  className="mt-1 p-2 border rounded w-full"
+                  rows={3}
+                  required
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button type="button" onClick={() => setShowResultModal(false)} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded">Submit</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -281,33 +512,45 @@ const TechnicianDashboard = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test Type</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Result</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Select</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {results.map((item, index) => (
-              <tr key={index}>
+              <tr key={index} className={selectedResultPatient === item.patientName ? "bg-blue-50" : ""}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.patientName}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.testType}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.result}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.time}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <button
+                    className={`px-3 py-1 rounded ${selectedResultPatient === item.patientName ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-blue-100"}`}
+                    onClick={() => setSelectedResultPatient(selectedResultPatient === item.patientName ? null : item.patientName)}
+                  >
+                    {selectedResultPatient === item.patientName ? "Selected" : "Select"}
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
       <div className="mt-4 flex gap-2">
-        <button className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-2">
+        <button onClick={handleExportPDF} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-2">
           <FileText className="w-4 h-4" />
           PDF
         </button>
-        <button className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-2">
+        <button onClick={handleExportExcel} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-2">
           <FileText className="w-4 h-4" />
           Excel
         </button>
-        <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2">
+        <button onClick={handleExportCSV} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2">
           <FileText className="w-4 h-4" />
           CSV
         </button>
+        {selectedResultPatient && (
+          <button onClick={() => setSelectedResultPatient(null)} className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 ml-2">Clear Selection</button>
+        )}
       </div>
     </div>
   );
@@ -330,6 +573,33 @@ const TechnicianDashboard = () => {
     }
   };
 
+  // Add patient handler
+  const handleAddPatient = (patient: Patient) => {
+    const updated = [...patients, patient];
+    setPatients(updated);
+    localStorage.setItem("patients", JSON.stringify(updated));
+
+    // Add to test queue and persist
+    setTestQueue(prev => {
+      const newQueue = [
+        ...prev,
+        {
+          id: prev.length > 0 ? Math.max(...prev.map(q => q.id)) + 1 : 1,
+          patientName: patient.name,
+          mrn: patient.mrn,
+          testType: patient.testType,
+          status: "Pending",
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ];
+      localStorage.setItem("testQueue", JSON.stringify(newQueue));
+      return newQueue;
+    });
+
+    setShowAddPatient(false);
+    toast.success("Patient added successfully!");
+  };
+
   return (
     <div className="space-y-6">
       <ToastContainer />
@@ -343,14 +613,46 @@ const TechnicianDashboard = () => {
           <h1 className="text-3xl font-bold text-gray-900">Lab Technician Dashboard</h1>
           <p className="text-gray-600 mt-1">Manage patient appointments and test results efficiently</p>
         </div>
-        <button
-          onClick={handleExportPDF}
-          className="mt-4 sm:mt-0 flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
-        >
-          <Printer className="w-4 h-4" />
-          Export PDF
-        </button>
+        <div className="flex gap-2 mt-4 sm:mt-0">
+          <button
+            onClick={handleExportPDF}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+          >
+            <Printer className="w-4 h-4" />
+            Export PDF
+          </button>
+          <button
+            onClick={() => setShowAddPatient(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            + Add Patient
+          </button>
+        </div>
       </motion.div>
+
+      {/* Add Patient Modal */}
+      {showAddPatient && (
+        <Dialog open={showAddPatient} onOpenChange={setShowAddPatient}>
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">
+            <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => setShowAddPatient(false)}
+                className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none"
+              >
+                ×
+              </button>
+              <h2 className="text-xl font-bold mb-4">Add Patient</h2>
+              <AddPatientForm
+                onSubmit={handleAddPatient}
+                onCancel={() => setShowAddPatient(false)}
+              />
+            </div>
+          </div>
+        </Dialog>
+      )}
+
 
       <NavigationTabs />
       {renderContent()}

@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Download, Eye, Calendar, Filter, Search } from 'lucide-react';
-import Layout from '@/components/Layout';
 
 interface TestResultsProps {
   userRole: 'admin' | 'technician' | 'patient';
@@ -17,7 +16,7 @@ const TestResults = ({ userRole, userName }: TestResultsProps) => {
     {
       id: 1,
       testName: 'Complete Blood Count',
-      patient: 'John Smith',
+      // patient: 'John Smith',
       date: '2024-12-15',
       status: 'Normal',
       category: 'Hematology',
@@ -27,7 +26,7 @@ const TestResults = ({ userRole, userName }: TestResultsProps) => {
     {
       id: 2,
       testName: 'Lipid Profile',
-      patient: 'Emily Johnson',
+      // patient: 'Emily Johnson',
       date: '2024-12-14',
       status: 'Abnormal',
       category: 'Chemistry',
@@ -37,7 +36,7 @@ const TestResults = ({ userRole, userName }: TestResultsProps) => {
     {
       id: 3,
       testName: 'Thyroid Function Test',
-      patient: 'Mike Davis',
+      // patient: 'Mike Davis',
       date: '2024-12-13',
       status: 'Normal',
       category: 'Endocrinology',
@@ -47,7 +46,7 @@ const TestResults = ({ userRole, userName }: TestResultsProps) => {
     {
       id: 4,
       testName: 'Glucose Test',
-      patient: 'Sarah Wilson',
+      // patient: 'Sarah Wilson',
       date: '2024-12-12',
       status: 'High',
       category: 'Chemistry',
@@ -57,7 +56,7 @@ const TestResults = ({ userRole, userName }: TestResultsProps) => {
     {
       id: 5,
       testName: 'Vitamin D Level',
-      patient: 'Alex Brown',
+      // patient: 'Alex Brown',
       date: '2024-12-11',
       status: 'Low',
       category: 'Chemistry',
@@ -86,8 +85,7 @@ const TestResults = ({ userRole, userName }: TestResultsProps) => {
   };
 
   return (
-    <Layout userRole={userRole} userName={userName}>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -158,7 +156,7 @@ const TestResults = ({ userRole, userName }: TestResultsProps) => {
                       </div>
                       <div>
                         <h4 className="font-medium text-gray-900">{result.testName}</h4>
-                        <p className="text-sm text-gray-600">{result.patient}</p>
+                        {/* <p className="text-sm text-gray-600">{result.patient}</p> */}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -201,8 +199,7 @@ const TestResults = ({ userRole, userName }: TestResultsProps) => {
             </div>
           </div>
         </motion.div>
-      </div>
-    </Layout>
+    </div>
   );
 };
 

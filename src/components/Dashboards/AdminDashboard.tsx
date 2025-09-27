@@ -7,11 +7,14 @@ import {
   getLabCapacity,
   getAlerts,
   uploadCensus,
-  handleApiError
+  handleApiError,
+  getAllAppointments
 } from '../../services/api';
 import StatsCard from './StatsCard';
 import FileUpload from '../Admin/FileUpload';
 import QRRegistration from '../Admin/QRRegistration';
+import { StatusPieChart, StatusBarChart, StatusDonutChart } from "../ui/StatusCharts";
+import ReportsPage from '../../pages/Reports';
 
 interface FileUploadProps {
   onFileUpload: (file: File) => void;
@@ -21,10 +24,87 @@ interface FileUploadProps {
 const AdminDashboard = () => {
   const [stats, setStats] = useState([]);
   const [recentUsers, setRecentUsers] = useState([]);
-  const [labCapacity, setLabCapacity] = useState([]);
+  // Remove labCapacity, add labResults
+  const [labResults, setLabResults] = useState([]);
+  const [selectedResults, setSelectedResults] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  const [showReports, setShowReports] = useState(false);
+
+  // Appointments state
+  const [appointments, setAppointments] = useState([]);
+  const [appointmentsSearch, setAppointmentsSearch] = useState("");
+  const [filteredAppointments, setFilteredAppointments] = useState([]);
+  // Fetch all appointments for admin
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        const data = await getAllAppointments();
+        setAppointments(data);
+        setFilteredAppointments(data);
+      } catch (e) {
+        handleApiError(e, "Failed to fetch appointments");
+      }
+    };
+    fetchAppointments();
+  }, []);
+
+  // Filter appointments by patient name or status
+  useEffect(() => {
+    if (!appointmentsSearch) {
+      setFilteredAppointments(appointments);
+    } else {
+      const lower = appointmentsSearch.toLowerCase();
+      setFilteredAppointments(
+        appointments.filter(
+          (a) =>
+            (a.patient_name && a.patient_name.toLowerCase().includes(lower)) ||
+            (a.status && a.status.toLowerCase().includes(lower))
+        )
+      );
+    }
+  }, [appointmentsSearch, appointments]);
+
+  // Helper to aggregate status counts from labResults
+  const getStatusData = () => {
+    const statusCounts = { Pending: 0, "In Progress": 0, Completed: 0 };
+    filteredLabResults.forEach((item) => {
+      const status = (item.status || "Pending").toLowerCase();
+      if (status.includes("progress")) statusCounts["In Progress"]++;
+      else if (status.includes("complete")) statusCounts["Completed"]++;
+      else statusCounts["Pending"]++;
+    });
+    return [
+      { status: "Pending", value: statusCounts["Pending"] },
+      { status: "In Progress", value: statusCounts["In Progress"] },
+      { status: "Completed", value: statusCounts["Completed"] },
+    ];
+  };
+
+  // Search/filter state for lab results
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredLabResults, setFilteredLabResults] = useState([]);
+
+  // Always filter by all relevant fields
+  useEffect(() => {
+    if (!searchTerm) {
+      setFilteredLabResults(labResults);
+    } else {
+      const lower = searchTerm.toLowerCase();
+      setFilteredLabResults(
+        labResults.filter(
+          (item) =>
+            (item.patientName && item.patientName.toLowerCase().includes(lower)) ||
+            (item.mrn && item.mrn.toLowerCase().includes(lower)) ||
+            (item.labName && item.labName.toLowerCase().includes(lower)) ||
+            (item.testType && item.testType.toLowerCase().includes(lower)) ||
+            (item.result && item.result.toLowerCase().includes(lower))
+        )
+      );
+    }
+  }, [searchTerm, labResults]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -67,7 +147,14 @@ const AdminDashboard = () => {
 
         setStats(transformedStats);
         setRecentUsers(usersRes || []);
-        setLabCapacity(labsRes || []);
+        // Only fetch results from technician (localStorage)
+        let results = [];
+        try {
+          const stored = localStorage.getItem("lab_results");
+          if (stored) results = JSON.parse(stored);
+        } catch {}
+        setLabResults(results);
+        setSelectedResults([]);
         setAlerts(alertsRes || []);
       } catch (err) {
         handleApiError(err, 'Failed to load dashboard data');
@@ -160,6 +247,13 @@ const AdminDashboard = () => {
           </label>
           <button 
             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+            onClick={() => setShowReports((prev) => !prev)}
+          >
+            <TestTube2 className="h-4 w-4" />
+            {showReports ? 'Hide Reports' : 'View Reports'}
+          </button>
+          <button 
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
             onClick={() => (document.getElementById('qr_modal') as HTMLDialogElement)?.showModal()}
           >
             <QrCode className="h-4 w-4" />
@@ -167,6 +261,13 @@ const AdminDashboard = () => {
           </button>
         </div>
       </motion.div>
+
+      {/* Reports Section */}
+      {showReports && (
+        <div className="my-6">
+          <ReportsPage />
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -218,7 +319,7 @@ const AdminDashboard = () => {
         </motion.div>
       </div>
 
-      {/* Recent Users and Lab Capacity */}
+      {/* Recent Users, Appointments, and Lab Results */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Users */}
         <motion.div
@@ -265,44 +366,180 @@ const AdminDashboard = () => {
           </div>
         </motion.div>
 
-        {/* Lab Capacity */}
+        {/* Appointments Table removed. Appointments now only show when the sidebar button is clicked. */}
+
+        {/* Lab Results (from TechnicianDashboard) - with checkboxes, download, reports, and search */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.6 }}
           className="bg-white rounded-xl shadow-sm border p-6"
         >
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Lab Capacity</h3>
-          <div className="space-y-4">
-            {labCapacity.length > 0 ? (
-              labCapacity.map((lab) => (
-                <div key={lab.lab_id} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-gray-700">{lab.name}</span>
-                    <span className="text-sm text-gray-500">
-                      {lab.current}/{lab.max} ({lab.percentage}%)
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${lab.percentage}%` }}
-                      transition={{ duration: 0.8 }}
-                      className={`h-2.5 rounded-full ${
-                        lab.percentage > 85 ? 'bg-red-500' : 
-                        lab.percentage > 70 ? 'bg-yellow-500' : 'bg-green-500'
-                      }`}
-                    />
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <TestTube2 className="mx-auto h-10 w-10 text-gray-400" />
-                <p className="text-gray-500 mt-2">No lab capacity data available</p>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Labs</h3>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:items-center">
+              <input
+              type="text"
+              placeholder="Search by patient, MRN, lab name, test type, or result..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="border rounded px-3 py-2 text-sm flex-1 min-w-0"
+              style={{ maxWidth: '260px' }}
+              />
+              <div className="flex gap-2 w-full sm:w-auto">
+              <button
+                className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full sm:w-auto"
+                onClick={e => {
+                e.preventDefault();
+                // Explicitly trigger filtering by updating filteredLabResults
+                const lower = searchTerm.toLowerCase();
+                setFilteredLabResults(
+                labResults.filter(
+                (item) =>
+                  (item.patientName && item.patientName.toLowerCase().includes(lower)) ||
+                  (item.mrn && item.mrn.toLowerCase().includes(lower)) ||
+                  (item.labName && item.labName.toLowerCase().includes(lower)) ||
+                  (item.testType && item.testType.toLowerCase().includes(lower)) ||
+                  (item.result && item.result.toLowerCase().includes(lower))
+                )
+                );
+                }}
+              >
+                Search
+              </button>
+              <button
+                className="px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 w-full sm:w-auto"
+                onClick={e => { e.preventDefault(); setSearchTerm(""); }}
+              >
+                Clear
+              </button>
               </div>
-            )}
+            </div>
+            </div>
+            
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3"></th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test Type</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Result</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lab Name</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {(filteredLabResults && filteredLabResults.length > 0
+                  ? filteredLabResults
+                  : [
+                      // Dummy data if no real lab results
+                      {
+                        patientName: 'John Doe',
+                        mrn: '1001',
+                        labName: 'Main Lab',
+                        testType: 'CBC',
+                        result: 'Normal',
+                        time: '2025-09-19 10:00',
+                      },
+                      {
+                        patientName: 'Jane Smith',
+                        mrn: '1002',
+                        labName: 'Chemistry Lab',
+                        testType: 'Lipid Panel',
+                        result: 'High Cholesterol',
+                        time: '2025-09-19 11:30',
+                      },
+                      {
+                        patientName: 'Alice Brown',
+                        mrn: '1003',
+                        labName: 'Endocrine Lab',
+                        testType: 'Blood Sugar',
+                        result: 'Elevated',
+                        time: '2025-09-19 09:15',
+                      },
+                    ]
+                ).map((item, index) => (
+                  <tr key={index}>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm">
+                      <input
+                        type="checkbox"
+                        checked={selectedResults.includes(index)}
+                        onChange={e => {
+                          setSelectedResults(prev =>
+                            e.target.checked
+                              ? [...prev, index]
+                              : prev.filter(i => i !== index)
+                          );
+                        }}
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.patientName}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.testType}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.result}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.time}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.labName}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+          <div className="mb-4">
+            <button
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              disabled={selectedResults.length === 0}
+              onClick={() => {
+                // Download selected results as CSV
+                const header = "Patient Name,Test Type,Result,Time\n";
+                const rows = filteredLabResults
+                  .filter((_, idx) => selectedResults.includes(idx))
+                  .map(item => `${item.patientName},${item.testType},${item.result},${item.time}`)
+                  .join("\n");
+                const csv = header + rows;
+                const blob = new Blob([csv], { type: "text/csv" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "selected_lab_results.csv";
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              Download Selected Results
+            </button>
+          </div>
+          {/* Lab Tests Table */}
+            <div className="mb-6">
+            <h4 className="text-md font-semibold text-gray-900 mb-2">Lab Tests</h4>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Counts</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lab Name</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">CBC</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">20</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Main Lab</td>
+                </tr>
+                <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Lipid Panel</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">15</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Chemistry Lab</td>
+                </tr>
+                <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Blood Sugar</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">10</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Endocrine Lab</td>
+                </tr>
+              </tbody>
+              </table>
+            </div>
+            </div>
         </motion.div>
       </div>
 

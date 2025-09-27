@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { User, Mail, Phone, MapPin, Calendar, Edit, Save, X } from 'lucide-react';
-import Layout from '@/components/Layout';
 
 interface ProfileProps {
   userRole: 'admin' | 'technician' | 'patient';
@@ -13,11 +12,11 @@ const Profile = ({ userRole, userName }: ProfileProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
     name: userName,
-    email: 'john.smith@email.com',
-    phone: '+1 (555) 123-4567',
-    address: '123 Main St, City, State 12345',
+    email: 'john.smith@gmail.com',
+    phone: '+2547 1234 5678',
+    address: 'Ruaka - Kiambu',
     dateOfBirth: '1990-05-15',
-    emergencyContact: 'Jane Smith - +1 (555) 987-6543',
+    emergencyContact: 'Jane Smith - +2547 4321 8765',
     bloodType: 'O+',
     allergies: 'Penicillin, Shellfish',
     medicalHistory: 'Hypertension, Diabetes Type 2'
@@ -39,8 +38,7 @@ const Profile = ({ userRole, userName }: ProfileProps) => {
   const readOnlyClasses = "text-gray-900 font-medium";
 
   return (
-    <Layout userRole={userRole} userName={userName}>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -276,7 +274,7 @@ const Profile = ({ userRole, userName }: ProfileProps) => {
           </motion.div>
         )}
       </div>
-    </Layout>
+
   );
 };
 
