@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 // 🔧 Axios Setup
 // ==========================
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "https://elabs-project.onrender.com/",
+  baseURL: import.meta.env.VITE_API_URL || "https://elabs-project.onrender.com",
 });
 
 API.interceptors.request.use((config) => {
